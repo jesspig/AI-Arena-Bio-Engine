@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "@p5-wrapper/react": "^5.0.4",
+    "p5": "^2.2.3",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.5.0",
+    "postcss": "^8.5.12",
+    "tailwindcss": "^4.2.4",
+    "vite": "^8.0.10"
+  }
+}
