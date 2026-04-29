@@ -2,6 +2,30 @@
 
 这是一个**模型能力测试项目**，用于对比 glm-5.1、deepseek-v4、kimi-k2.6 在相同设计主题中的自由发挥生成效果。
 
+## 快速开始
+
+```bash
+# 一键启动（自动构建并启动 Portal）
+./start.ps1    # Windows PowerShell
+./start.sh     # Linux/macOS
+
+# 或手动启动
+cd portal
+bun run build    # 首次运行需要构建
+bun run dev      # 启动开发服务器
+```
+
+访问 http://localhost:8788 查看 Portal 主页，从那里可以跳转到三个模型实现。
+
+## 部署到 Cloudflare Workers
+
+```bash
+cd portal
+bun run deploy
+```
+
+**单 Worker 部署架构**：整个 monorepo 打包到一个 Cloudflare Worker 中，通过路由前缀访问不同项目。
+
 ## 项目背景
 
 在相同的设计文档基础上，让不同的 AI 模型自由发挥，观察它们在以下维度的表现差异：
@@ -14,13 +38,52 @@
 
 ## 测试模型
 
-| 模型目录 | 模型名称 | 说明 |
-| --- | --- | --- |
-| glm-5.1/ | GLM-5.1 | 智谱 AI 模型 |
-| deepseek-v4/ | DeepSeek-V4 | 深度求索 AI 模型 |
-| kimi-k2.6/ | Kimi-K2.6 | 月之暗面 AI 模型 |
+| 模型目录 | 模型名称 | 说明 | 路由前缀 |
+| --- | --- | --- | --- |
+| glm-5.1/ | GLM-5.1 | 智谱 AI 模型 | `/glm-5.1` |
+| deepseek-v4/ | DeepSeek-V4 | 深度求索 AI 模型 | `/deepseek-v4` |
+| kimi-k2.6/ | Kimi-K2.6 | 月之暗面 AI 模型 | `/kimi-k2.6` |
 
-## 设计主题
+## 部署架构
+
+```
+https://your-worker.workers.dev
+├── /              # Portal 主页（三个项目卡片）
+├── /glm-5.1/      # GLM-5.1 实现
+├── /deepseek-v4/  # DeepSeek-V4 实现
+└── /kimi-k2.6/    # Kimi-K2.6 实现
+```
+
+## 项目结构
+
+```
+Bio-Engine/
+├── portal/              # 单 Worker 部署目录
+│   ├── src/index.ts     # Hono 应用
+│   ├── public/          # 构建产物（自动生成）
+│   └── build.ts         # 构建脚本
+├── glm-5.1/             # GLM-5.1 实现
+├── deepseek-v4/         # DeepSeek-V4 实现
+├── kimi-k2.6/           # Kimi-K2.6 实现
+└── docs/                # 设计文档（共享）
+```
+
+## 常用命令
+
+```bash
+# Portal（根目录）
+./start.ps1          # 一键启动
+cd portal && bun run dev    # 启动开发服务器
+cd portal && bun run build  # 构建所有项目
+cd portal && bun run deploy # 部署到 Workers
+
+# 各子项目（在子目录中执行）
+bun install          # 安装依赖
+bun run dev          # 独立启动该项目（端口 5200/5300/5100）
+bun run build        # 构建该项目
+```
+
+## 设计文档
 
 所有模型都基于相同的设计文档进行实现：
 
@@ -33,60 +96,35 @@
 | [05-交互设计.md](docs/05-交互设计.md) | 用户与生物互动的多种模式 |
 | [06-性能建议.md](docs/06-性能建议.md) | 优化方向和策略 |
 
-## 核心概念
-
-- **程序化动画**：定义规则而非绘制每一帧，系统按规则自动生成动画
-- **链式跟随**：每个节段跟随前一节段运动，形成连贯的整体运动
-- **反向运动学（IK）**：从目标位置倒推各关节的应有位置
-- **行为系统**：赋予生物状态（放松、紧张、好奇）和目标，创造"生命感"
-
 ## 技术栈
 
-- **前端框架**：React 19
-- **图形库**：p5.js + @p5-wrapper/react
-- **构建工具**：Vite 8
-- **样式**：Tailwind CSS 4
+- **Portal**：Hono + Cloudflare Workers + Tailwind CSS
+- **子项目**：React 19 + p5.js + Vite 8 + Tailwind CSS 4
 - **包管理器**：bun
-
-## 常用命令
-
-```bash
-bun install          # 安装依赖
-bun run dev          # 启动开发服务器（Vite）
-bun run build        # 构建生产版本
-bun run preview      # 预览生产构建
-```
 
 ## 对比维度
 
-在评估各模型实现时，可以从以下维度进行对比：
-
 ### 功能完整性
-
 - 是否实现了核心的链式运动
 - 是否包含生物行为系统
 - 交互功能是否完善
 
 ### 代码质量
-
 - 代码结构是否清晰
 - 是否遵循单一职责原则
 - 命名是否规范
 
 ### 算法选择
-
 - 选择了哪种链式运动算法
 - IK 实现方式
 - 是否有创新性
 
 ### 视觉表现
-
 - 生物的视觉风格
 - 动画流畅度
 - 是否有独特的视觉效果
 
 ### 架构设计
-
 - 是否采用了引擎与渲染分离
 - 模块划分是否合理
 - 可扩展性如何
@@ -99,8 +137,6 @@ bun run preview      # 预览生产构建
 - **迭代开发**：先让简单版本跑起来，再观察调整
 - **在"错误"中发现**：算法错误可能产生有趣效果
 
-## 注意事项
+## License
 
-- 每个模型的实现都保持独立，互不干扰
-- 各模型可以自由选择技术方向和算法
-- 重点在于对比不同模型的创造能力和解决问题的思路
+MIT

@@ -19,3 +19,10 @@ bun-debug.log*
 !.vscode/settings.json
 
 *.tsbuildinfo
+
+# Wrangler / Cloudflare Workers
+.wrangler/
+.dev.vars
+
+# 构建产物（自动生成，不应提交）
+portal/public/

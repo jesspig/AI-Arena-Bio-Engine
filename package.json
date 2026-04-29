@@ -1,14 +1,27 @@
 {
+  "name": "bio-engine",
+  "version": "1.0.0",
+  "description": "Bio-Engine - AI 模型能力对比测试项目",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run portal/src/dev.ts",
+    "build": "bun run build.ts",
+    "clean": "rm -rf portal/public",
+    "deploy": "bun run build && wrangler deploy"
+  },
   "dependencies": {
     "@p5-wrapper/react": "^5.0.4",
     "p5": "^2.2.3",
     "react": "^19.2.5",
-    "react-dom": "^19.2.5"
+    "react-dom": "^19.2.5",
+    "hono": "^4.7.5"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250520.0",
     "autoprefixer": "^10.5.0",
     "postcss": "^8.5.12",
     "tailwindcss": "^4.2.4",
-    "vite": "^8.0.10"
+    "vite": "^8.0.10",
+    "wrangler": "^4.12.0"
   }
 }
