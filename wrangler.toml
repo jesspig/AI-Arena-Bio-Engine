@@ -1,0 +1,7 @@
+name = "bio-engine"
+main = "portal/src/index.ts"
+compatibility_date = "2026-04-29"
+
+[assets]
+directory = "portal/public"
+html_handling = "auto-trailing-slash"
