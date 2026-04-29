@@ -5,22 +5,21 @@
 ## 快速开始
 
 ```bash
-# 一键启动（自动构建并启动 Portal）
-./start.ps1    # Windows PowerShell
-./start.sh     # Linux/macOS
+# 安装根依赖
+bun install
 
-# 或手动启动
-cd portal
-bun run build    # 首次运行需要构建
-bun run dev      # 启动开发服务器
+# 构建所有子项目
+bun run build
+
+# 启动本地服务
+bun run dev
 ```
 
-访问 http://localhost:8788 查看 Portal 主页，从那里可以跳转到三个模型实现。
+访问 http://localhost:8787 查看 Portal 主页，从那里可以跳转到三个模型实现。
 
 ## 部署到 Cloudflare Workers
 
 ```bash
-cd portal
 bun run deploy
 ```
 
@@ -60,8 +59,7 @@ https://your-worker.workers.dev
 Bio-Engine/
 ├── portal/              # 单 Worker 部署目录
 │   ├── src/index.ts     # Hono 应用
-│   ├── public/          # 构建产物（自动生成）
-│   └── build.ts         # 构建脚本
+│   └── public/          # 构建产物（自动生成）
 ├── glm-5.1/             # GLM-5.1 实现
 ├── deepseek-v4/         # DeepSeek-V4 实现
 ├── kimi-k2.6/           # Kimi-K2.6 实现
@@ -71,16 +69,15 @@ Bio-Engine/
 ## 常用命令
 
 ```bash
-# Portal（根目录）
-./start.ps1          # 一键启动
-cd portal && bun run dev    # 启动开发服务器
-cd portal && bun run build  # 构建所有项目
-cd portal && bun run deploy # 部署到 Workers
+# 根目录
+bun run build            # 构建所有子项目
+bun run dev              # wrangler 本地服务（端口 8788）
+bun run deploy           # 部署到 Workers
+bun run clean            # 清理构建产物
 
-# 各子项目（在子目录中执行）
+# 各子项目（在子目录中执行，独立 Vite HMR）
 bun install          # 安装依赖
 bun run dev          # 独立启动该项目（端口 5200/5300/5100）
-bun run build        # 构建该项目
 ```
 
 ## 设计文档

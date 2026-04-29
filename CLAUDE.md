@@ -1,163 +1,99 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## 项目概述
 
-Bio-Engine 是一个**AI 模型能力对比测试项目**，在相同的设计文档基础上，让不同的 AI 模型（glm-5.1、deepseek-v4、kimi-k2.6）自由发挥，对比它们在算法思路、代码架构、视觉风格和功能完整性方面的差异。
+Bio-Engine 是一个 **AI 模型能力对比测试项目**，在相同的设计文档基础上，让不同的 AI 模型自由发挥，对比它们在算法思路、代码架构、视觉风格和功能完整性方面的差异。这不是一个"按规格实现"的项目，而是一个启发创造力的画布。
 
-这不是一个"按规格实现"的项目，而是一个启发创造力的画布。项目鼓励独特的视觉风格、不同的算法思路和有趣的交互方式。
+## 架构
 
-## 核心概念
+**单 Worker 部署**：所有子项目直接构建到 `portal/public/`，由 Cloudflare Worker（Hono 应用）通过 `[assets]` 提供静态文件，主页是 Portal 卡片导航。
 
-理解以下核心概念对实现至关重要：
-
-- **程序化动画**：定义规则而非绘制每一帧，系统按规则自动生成动画
-- **链式跟随**：每个节段跟随前一节段运动，形成连贯的整体运动
-- **反向运动学（IK）**：从目标位置倒推各关节的应有位置
-- **行为系统**：赋予生物状态（放松、紧张、好奇）和目标，创造"生命感"
-
-详细概念请参考 [docs/02-核心概念.md](docs/02-核心概念.md)
+每个子项目的 Vite `base` 配置匹配路由前缀（如 `base: '/glm-5.1/'`），`build.outDir` 直接输出到 `../portal/public/<项目名>/`。
 
 ## 常用命令
 
-**重要**：每个 AI 模型实现都是独立的项目，命令需要在对应的子目录中执行。
-
-### 各模型子目录
-
 ```bash
-# Kimi-K2.6 实现（端口 5100）
-cd kimi-k2.6
-bun install
-bun run dev
+# 构建：构建所有子项目到 portal/public/
+bun run build
 
-# GLM-5.1 实现（端口 5200）
-cd glm-5.1
-bun install
-bun run dev
+# 开发：先构建，再用 wrangler 本地服务
+bun run build && bun run dev    # wrangler 默认端口
 
-# DeepSeek-V4 实现（端口 5300）
-cd deepseek-v4
-bun install
-bun run dev
+# 部署到 Cloudflare Workers
+bun run deploy
+
+# 清理构建产物
+bun run clean
+
+# 单独构建某个子项目
+bun run build:kimi-k2.6
+bun run build:glm-5.1
+bun run build:deepseek-v4
+
+# 单独开发某个子项目（进入对应目录，独立 Vite HMR）
+cd kimi-k2.6 && bun install && bun run dev   # 端口 5100
+cd glm-5.1   && bun install && bun run dev   # 端口 5200
+cd deepseek-v4 && bun install && bun run dev # 端口 5300
 ```
-
-### 通用命令（在各子目录中执行）
-
-```bash
-bun install          # 安装依赖
-bun run dev          # 启动开发服务器（Vite）
-bun run build        # 构建生产版本
-bun run preview      # 预览生产构建
-```
-
-## 技术栈
-
-- **前端框架**：React 19
-- **图形库**：p5.js + @p5-wrapper/react
-- **构建工具**：Vite 8
-- **样式**：Tailwind CSS 4
-- **包管理器**：bun
-- **语言**：TypeScript
 
 ## 项目结构
 
 ```
 Bio-Engine/
+├── portal/src/              # Hono 应用（Portal 主页）
+├── wrangler.toml            # Cloudflare Workers 配置
 ├── docs/                    # 设计文档（所有模型共享）
-│
-├── glm-5.1/                # GLM-5.1 模型实现（端口 5200）
-│   ├── src/
-│   │   ├── engine/          # 引擎层：纯算法，无绘图依赖
-│   │   └── renderer/       # 渲染层：p5.js 绘图
-│   └── vite.config.ts
-│
-├── deepseek-v4/            # DeepSeek-V4 模型实现（端口 5300）
-│   ├── src/
-│   │   ├── engine/          # 引擎层
-│   │   └── render/          # 渲染层
-│   └── vite.config.ts
-│
-├── kimi-k2.6/              # Kimi-K2.6 模型实现（端口 5100）
-│   ├── src/
-│   │   ├── engine/          # 引擎层
-│   │   ├── renderer/       # 渲染层
-│   │   └── components/      # UI 组件
-│   └── vite.config.ts
-│
-├── package.json            # 根目录依赖配置（参考用）
-└── README.md               # 项目说明
+├── glm-5.1/src/             # GLM-5.1 实现
+│   ├── engine/              #   纯算法层（vec2, types, spine, limb, behavior, creature）
+│   └── renderer/            #   p5.js 渲染（creatureRenderer, particles）
+├── deepseek-v4/src/         # DeepSeek-V4 实现
+│   ├── engine/              #   纯算法层（math, types, spine, leg, behavior, creature）
+│   └── render/              #   p5.js 渲染（creatureRender）
+└── kimi-k2.6/src/           # Kimi-K2.6 实现
+    ├── engine/              #   纯算法层（math, types, creature, particles, world）
+    ├── renderer/            #   p5.js 渲染（p5Renderer）
+    └── components/          #   UI 组件（ControlPanel, InfoOverlay, BioCanvas）
 ```
 
-## 推荐架构
+## 技术栈
 
-对于新实现或修改，推荐采用 **引擎与渲染分离** 的架构：
+- **子项目**：React 19 + p5.js + @p5-wrapper/react + Vite 8 + Tailwind CSS 4 + TypeScript
+- **Portal**：Hono + Cloudflare Workers (wrangler)
+- **包管理器**：bun
 
-```
-引擎层（engine/，纯算法，无外部依赖）
-  ├── 数据结构定义
-  ├── 数学工具函数
-  ├── 链式运动逻辑
-  ├── 肢体 IK 逻辑
-  ├── 行为/漫游逻辑
-  └── 生物主控逻辑
+## 端口
 
-渲染层（renderer/ 或 sketch.ts）
-  ├── 负责 p5.js 画布渲染
-  ├── 将引擎数据转换为可视化输出
-  └── 处理用户交互事件
+| 目录 | 端口 | 路由前缀 |
+| --- | --- | --- |
+| kimi-k2.6 | 5100 | `/kimi-k2.6/` |
+| glm-5.1 | 5200 | `/glm-5.1/` |
+| deepseek-v4 | 5300 | `/deepseek-v4/` |
+| Portal (wrangler) | 默认 | `/` |
 
-UI 层（App.tsx, components/）
-  ├── React 组件
-  ├── 控制面板
-  └── 用户界面
-```
+## 子项目架构模式
 
-**关键原则**：
+推荐 **引擎与渲染分离**：
 
-- 引擎层不调用任何绘图 API
-- 引擎通过参数接收数据，通过返回值输出数据
-- 渲染层负责将引擎结果可视化
-- UI 层通过 React 状态管理用户交互
+- **engine/** — 纯算法，不调用任何绘图 API。包含数据结构、数学工具、链式运动、IK、行为系统
+- **renderer/** — p5.js 绘图，将引擎数据可视化，处理用户交互
+- **components/** — React UI（控制面板、画布容器等）
 
-## 端口配置
+引擎通过参数接收数据，通过返回值输出数据。三个子项目各自独立实现，互不依赖。
 
-各模型实现使用不同的端口以避免冲突：
+## 核心概念
 
-| 模型目录 | 端口 |
-| --- | --- |
-| kimi-k2.6 | 5100 |
-| glm-5.1 | 5200 |
-| deepseek-v4 | 5300 |
+- **程序化动画**：定义规则而非绘制每一帧
+- **链式跟随**：每个节段跟随前一节段运动
+- **反向运动学（IK）**：从目标位置倒推各关节位置
+- **行为系统**：赋予生物状态（放松、紧张、好奇）和目标
 
-## 算法选择参考
-
-### 链式运动
-
-- **距离约束迭代法**：简单自然，适合蛇形、绳索
-- **位置插值跟随法**：运动平滑，容易添加惯性
-- **弹簧物理模拟**：有真实物理感
-- **角度约束法**：适合有明确关节的结构
-
-### 肢体 IK
-
-- **二关节解析法**：计算快，一次得解
-- **FABRIK**（正向反向）：容易实现，适合多关节
-- **数值迭代法**：灵活，可处理复杂约束
-
-详见 [docs/03-实现思路.md](docs/03-实现思路.md)
+详细概念：[docs/02-核心概念.md](docs/02-核心概念.md) | 算法参考：[docs/03-实现思路.md](docs/03-实现思路.md)
 
 ## 开发理念
 
-- **没有标准答案**：鼓励独特的实现方式
-- **迭代开发**：先让简单版本跑起来，再观察调整
-- **在"错误"中发现**：算法错误可能产生有趣效果
-- **先让它工作，再让它快**：性能优化是渐进过程
-
-## 注意事项
-
-- 每个模型的实现都保持独立，互不干扰
-- 各模型可以自由选择技术方向和算法
-- 设计文档是启发性的，不是硬性规范
-- 混合多种算法思路是 encouraged
-- 视觉风格和交互方式可以完全自定义
+- 没有标准答案，鼓励独特实现方式
+- 迭代开发：先跑起来再调整
+- 算法"错误"可能产生有趣效果
+- 每个模型可以自由选择算法和视觉风格
