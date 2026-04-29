@@ -8,4 +8,8 @@ export default defineConfig({
     port: 5300,
     hmr: { host: 'localhost', port: 5300 },
   },
+  build: {
+    outDir: '../portal/public/deepseek-v4',
+    emptyOutDir: true,
+  },
 });

@@ -8,4 +8,8 @@ export default defineConfig({
     port: 5200,
     hmr: { host: 'localhost', port: 5200 },
   },
+  build: {
+    outDir: '../portal/public/glm-5.1',
+    emptyOutDir: true,
+  },
 })

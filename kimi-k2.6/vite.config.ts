@@ -10,6 +10,7 @@ export default defineConfig({
     hmr: { host: 'localhost', port: 5100 },
   },
   build: {
-    outDir: 'dist',
+    outDir: '../portal/public/kimi-k2.6',
+    emptyOutDir: true,
   },
 });

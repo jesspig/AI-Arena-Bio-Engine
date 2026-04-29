@@ -3,40 +3,6 @@ import { html } from 'hono/html'
 
 const app = new Hono()
 
-const SUB_PROJECTS = [
-  { dir: 'kimi-k2.6', port: 5100 },
-  { dir: 'glm-5.1', port: 5200 },
-  { dir: 'deepseek-v4', port: 5300 },
-]
-
-// ============ 子项目代理 ============
-// 生产环境：wrangler [assets] 优先匹配静态文件，此代理不会执行
-// 开发环境：dev.ts 清理了 public/ 子目录，请求落入 Worker 走代理
-for (const project of SUB_PROJECTS) {
-  const prefix = `/${project.dir}`
-
-  app.get(prefix, (c) => c.redirect(`${prefix}/`))
-
-  app.all(`${prefix}/*`, async (c) => {
-    const url = new URL(c.req.url)
-    const targetUrl = `http://localhost:${project.port}${url.pathname}${url.search}`
-    const headers = new Headers(c.req.raw.headers)
-    headers.set('Host', `localhost:${project.port}`)
-
-    const resp = await fetch(targetUrl, {
-      method: c.req.method,
-      headers,
-      body: ['GET', 'HEAD'].includes(c.req.method) ? undefined : c.req.raw.body,
-      redirect: 'manual',
-    })
-
-    return new Response(resp.body, {
-      status: resp.status,
-      headers: resp.headers,
-    })
-  })
-}
-
 // ============ 布局模板 ============
 const layout = (title: string, content: string) => html`
 <!DOCTYPE html>
