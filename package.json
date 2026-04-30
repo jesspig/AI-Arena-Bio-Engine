@@ -8,7 +8,7 @@
     "build:glm-5.1": "cd glm-5.1 && bun install && bun run build",
     "build:deepseek-v4": "cd deepseek-v4 && bun install && bun run build",
     "build": "bun run build:kimi-k2.6 && bun run build:glm-5.1 && bun run build:deepseek-v4",
-    "dev": "bun run build && wrangler dev --local",
+    "dev": "wrangler dev --local",
     "clean": "rm -rf portal/public",
     "deploy": "bun run build && wrangler deploy"
   },

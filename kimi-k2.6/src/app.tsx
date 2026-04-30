@@ -9,6 +9,7 @@ export default function App() {
   const worldRef = useRef<WorldState | null>(null);
   const [, setTick] = useState(0);
   const animFrameRef = useRef<number>(0);
+  const isPausedRef = useRef(false);
 
   if (!worldRef.current) {
     worldRef.current = createWorld(window.innerWidth, window.innerHeight);
@@ -16,7 +17,7 @@ export default function App() {
   }
 
   const gameLoop = useCallback(() => {
-    if (worldRef.current) {
+    if (worldRef.current && !isPausedRef.current) {
       updateWorld(worldRef.current);
     }
     setTick((t) => (t + 1) % 1000000);

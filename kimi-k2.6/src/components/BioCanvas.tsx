@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import p5 from 'p5';
 import { WorldState } from '../engine/types';
 import { createSketch } from '../renderer/p5Renderer';
@@ -12,6 +12,7 @@ export default function BioCanvas({ world }: BioCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const p5Ref = useRef<p5 | null>(null);
   const worldRef = useRef(world);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     worldRef.current = world;
@@ -22,6 +23,7 @@ export default function BioCanvas({ world }: BioCanvasProps) {
 
     const sketch = createSketch(world, (p) => {
       p5Ref.current = p;
+      setIsReady(true);
     });
 
     const instance = new p5(sketch, containerRef.current);
@@ -29,6 +31,7 @@ export default function BioCanvas({ world }: BioCanvasProps) {
     return () => {
       instance.remove();
       p5Ref.current = null;
+      setIsReady(false);
     };
   }, []);
 
@@ -60,10 +63,21 @@ export default function BioCanvas({ world }: BioCanvasProps) {
       ref={containerRef}
       id="canvas-container"
       className="absolute inset-0 w-full h-full"
+      role="img"
+      aria-label="程序化生物动画画布"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-    />
+    >
+      {!isReady && (
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-950">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin" />
+            <span className="text-cyan-300 text-sm font-medium">加载中...</span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
