@@ -1,5 +1,4 @@
 import type { Sketch } from '@p5-wrapper/react'
-import type p5 from 'p5'
 import type { Vec2 } from './engine/vec2'
 import { createCreature, updateCreature, getCreatureSnapshot } from './engine/creature'
 import type { Creature } from './engine/creature'
@@ -10,6 +9,10 @@ import {
   renderBehaviorIndicator,
   renderBackground,
 } from './renderer/creatureRenderer'
+
+export const sketchState = {
+  behaviorState: 'wander' as string,
+}
 
 const sketch: Sketch = (p) => {
   let creature: Creature
@@ -40,6 +43,8 @@ const sketch: Sketch = (p) => {
 
     const snapshot = getCreatureSnapshot(creature)
 
+    sketchState.behaviorState = snapshot.behavior.state
+
     spawnAmbientParticles(particleSystem, p.width, p.height, p.frameCount)
 
     if (p.frameCount % 3 === 0) {
@@ -56,8 +61,6 @@ const sketch: Sketch = (p) => {
     renderParticles(p, particleSystem.particles)
     renderCreature(p, snapshot)
     renderBehaviorIndicator(p, snapshot)
-
-    renderHUD(p, snapshot)
   }
 
   p.mousePressed = () => {
@@ -68,28 +71,6 @@ const sketch: Sketch = (p) => {
       creature.behavior.target = { x: p.mouseX, y: p.mouseY }
     }
   }
-}
-
-function renderHUD(p: p5, snapshot: ReturnType<typeof getCreatureSnapshot>): void {
-  const stateLabels: Record<string, string> = {
-    wander: '漫游',
-    hunt: '追踪',
-    startle: '惊吓',
-    rest: '休息',
-  }
-
-  p.push()
-  p.colorMode(p.HSB, 360, 100, 100, 255)
-  p.noStroke()
-  p.fill(0, 0, 60, 150)
-  p.textSize(13)
-  p.textFont('monospace')
-  p.textAlign(p.LEFT, p.TOP)
-  p.text(`深渊螈  ·  ${stateLabels[snapshot.behavior.state] ?? snapshot.behavior.state}`, 16, 16)
-  p.textSize(11)
-  p.fill(0, 0, 40, 120)
-  p.text('点击画布吸引生物  |  靠近触发惊吓', 16, 36)
-  p.pop()
 }
 
 export default sketch
