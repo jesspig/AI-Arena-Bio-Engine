@@ -62,9 +62,3 @@ export interface CreatureState {
   wanderTarget: Vec2;
   restTimer: number;
 }
-
-export interface WorldState {
-  creatures: CreatureState[];
-  mouseTarget: Vec2 | null;
-  bounds: { width: number; height: number };
-}

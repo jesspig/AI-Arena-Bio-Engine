@@ -1,5 +1,5 @@
 import { BodySegment, Vec2, CreatureConfig } from './types';
-import { sub, normalize, scale, add, lerp, length } from './math';
+import { sub, normalize, scale, add, length } from './math';
 
 export function createSpine(config: CreatureConfig, startPos: Vec2, angle: number): BodySegment[] {
   const segments: BodySegment[] = [];

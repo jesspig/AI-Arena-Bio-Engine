@@ -1,9 +1,8 @@
 import { useEffect, useRef } from 'react';
 import p5 from 'p5';
-import { CreatureState } from '../engine/types';
+import { CreatureState, Vec2 } from '../engine/types';
 import { createCreature, updateCreature } from '../engine/creature';
 import { drawCreature, drawTargetIndicator, drawBackground, drawBehaviorLabel } from '../render/creatureRender';
-import { Vec2 } from '../engine/types';
 
 interface BioCanvasProps {
   creatureRef: React.MutableRefObject<CreatureState | null>;

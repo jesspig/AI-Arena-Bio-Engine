@@ -1,6 +1,6 @@
 import p5 from 'p5';
 import { CreatureState, BodySegment, LegState, Vec2 } from '../engine/types';
-import { sub, normalize, perpendicular, add, scale, length, lerp } from '../engine/math';
+import { sub, normalize, perpendicular, add, scale, length, lerpScalar } from '../engine/math';
 
 interface TrailParticle {
   pos: Vec2;
@@ -40,10 +40,6 @@ function getSegmentColor(index: number, total: number): { body: [number, number,
     body: [r, g, b],
     highlight: [highlightR, highlightG, highlightB],
   };
-}
-
-function lerpScalar(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
 }
 
 function drawBody(p: p5, segments: BodySegment[], total: number, time: number): void {
@@ -156,14 +152,15 @@ function drawHead(p: p5, segments: BodySegment[], time: number): void {
 }
 
 function drawLegs(p: p5, segments: BodySegment[], time: number): void {
-  for (let i = 0; i < segments.length; i++) {
+  const totalSegments = segments.length;
+  for (let i = 0; i < totalSegments; i++) {
     const seg = segments[i];
-    drawSingleLeg(p, seg, seg.legLeft, i, time);
-    drawSingleLeg(p, seg, seg.legRight, i, time);
+    drawSingleLeg(p, seg, seg.legLeft, i, totalSegments, time);
+    drawSingleLeg(p, seg, seg.legRight, i, totalSegments, time);
   }
 }
 
-function drawSingleLeg(p: p5, _segment: BodySegment, leg: LegState, index: number, time: number): void {
+function drawSingleLeg(p: p5, _segment: BodySegment, leg: LegState, index: number, totalSegments: number, time: number): void {
   const { shoulder, knee, foot } = leg.joints;
   const isLeft = leg.side === 'left';
   const legColor = isLeft ? [80, 180, 130] : [60, 160, 120];
@@ -171,7 +168,7 @@ function drawSingleLeg(p: p5, _segment: BodySegment, leg: LegState, index: numbe
 
   p.noFill();
   p.stroke(legColor[0], legColor[1], legColor[2], alpha);
-  p.strokeWeight(3 - (index / 28) * 1.5);
+  p.strokeWeight(3 - (index / totalSegments) * 1.5);
   p.line(shoulder.x, shoulder.y, knee.x, knee.y);
   p.line(knee.x, knee.y, foot.x, foot.y);
 

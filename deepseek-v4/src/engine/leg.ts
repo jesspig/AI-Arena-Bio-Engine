@@ -1,5 +1,5 @@
 import { BodySegment, LegState, Vec2, CreatureConfig } from './types';
-import { sub, add, scale, normalize, length, distance, lerp } from './math';
+import { sub, add, scale, normalize, length } from './math';
 
 function solve2JointIK(
   shoulder: Vec2,
