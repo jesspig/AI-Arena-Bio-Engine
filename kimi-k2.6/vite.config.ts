@@ -13,5 +13,15 @@ export default defineConfig({
   build: {
     outDir: '../portal/public/kimi-k2.6',
     emptyOutDir: true,
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/p5')) {
+            return 'p5';
+          }
+        },
+      },
+    },
   },
 });
