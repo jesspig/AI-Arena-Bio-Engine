@@ -1,28 +1,50 @@
-dist
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
 *.local
 
+# Environment variables
 .env
 .env.local
 .env.*.local
 
-node_modules
-
-.DS_Store
-Thumbs.db
-
+# Logs
 *.log
 npm-debug.log*
 bun-debug.log*
 
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+.idea/
+*.swp
+*.swo
 
+# TypeScript
 *.tsbuildinfo
 
 # Wrangler / Cloudflare Workers
 .wrangler/
 .dev.vars
 
-# 构建产物（自动生成，不应提交）
+# Turbo cache
+.turbo/
+
+# Build artifacts (auto-generated, should not be committed)
 portal/public/
+
+# Subproject build outputs
+kimi-k2.6/dist/
+glm-5.1/dist/
+deepseek-v4/dist/
+mimo-v2.5-pro/dist/
+
+# Editor directories
+*.code-workspace

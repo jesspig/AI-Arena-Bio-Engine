@@ -1,6 +1,6 @@
 # Bio-Engine：AI 模型能力对比测试
 
-这是一个**模型能力测试项目**，用于对比 glm-5.1、deepseek-v4、kimi-k2.6 在相同设计主题中的自由发挥生成效果。
+这是一个**模型能力测试项目**，用于对比 glm-5.1、deepseek-v4、kimi-k2.6、mimo-v2.5-pro 在相同设计主题中的自由发挥生成效果。
 
 ## 快速开始
 
@@ -15,7 +15,7 @@ bun run build
 bun run dev
 ```
 
-访问 http://localhost:8787 查看 Portal 主页，从那里可以跳转到三个模型实现。
+访问 <http://localhost:8787> 查看 Portal 主页，从那里可以跳转到四个模型实现。
 
 ## 部署到 Cloudflare Workers
 
@@ -42,15 +42,17 @@ bun run deploy
 | glm-5.1/ | GLM-5.1 | 智谱 AI 模型 | `/glm-5.1` |
 | deepseek-v4/ | DeepSeek-V4 | 深度求索 AI 模型 | `/deepseek-v4` |
 | kimi-k2.6/ | Kimi-K2.6 | 月之暗面 AI 模型 | `/kimi-k2.6` |
+| mimo-v2.5-pro/ | Mimo-V2.5-Pro | Mimo AI 模型 | `/mimo-v2.5-pro` |
 
 ## 部署架构
 
 ```
 https://your-worker.workers.dev
-├── /              # Portal 主页（三个项目卡片）
-├── /glm-5.1/      # GLM-5.1 实现
-├── /deepseek-v4/  # DeepSeek-V4 实现
-└── /kimi-k2.6/    # Kimi-K2.6 实现
+├── /                 # Portal 主页（四个项目卡片）
+├── /glm-5.1/        # GLM-5.1 实现
+├── /deepseek-v4/    # DeepSeek-V4 实现
+├── /kimi-k2.6/      # Kimi-K2.6 实现
+└── /mimo-v2.5-pro/  # Mimo-V2.5-Pro 实现
 ```
 
 ## 项目结构
@@ -58,26 +60,49 @@ https://your-worker.workers.dev
 ```
 Bio-Engine/
 ├── portal/              # 单 Worker 部署目录
-│   ├── src/index.ts     # Hono 应用
-│   └── public/          # 构建产物（自动生成）
-├── glm-5.1/             # GLM-5.1 实现
-├── deepseek-v4/         # DeepSeek-V4 实现
-├── kimi-k2.6/           # Kimi-K2.6 实现
-└── docs/                # 设计文档（共享）
+│   ├── src/            # Portal 源文件
+│   └── public/         # 构建产物（自动生成）
+├── glm-5.1/            # GLM-5.1 实现
+├── deepseek-v4/        # DeepSeek-V4 实现
+├── kimi-k2.6/          # Kimi-K2.6 实现
+├── mimo-v2.5-pro/      # Mimo-V2.5-Pro 实现
+└── docs/               # 设计文档（共享）
 ```
 
 ## 常用命令
 
 ```bash
 # 根目录
-bun run build            # 构建所有子项目
-bun run dev              # wrangler 本地服务（端口 8788）
+bun run build            # 构建所有子项目（顺序执行）
+bun run build:turbo      # 使用 Turbo 构建（增量缓存优化）
+bun run dev              # Portal Vite 开发服务器（端口 5173）
+bun run dev:wrangler     # Wrangler 本地服务（端口 8787）
 bun run deploy           # 部署到 Workers
+bun run deploy:turbo     # Turbo 构建后部署
 bun run clean            # 清理构建产物
 
 # 各子项目（在子目录中执行，独立 Vite HMR）
 bun install          # 安装依赖
-bun run dev          # 独立启动该项目（端口 5200/5300/5100）
+bun run dev          # 独立启动该项目（端口 5200/5300/5100/5400）
+```
+
+## Turbo 构建优化
+
+项目使用 **Turbo** 进行增量构建优化：
+
+- **首次构建**：完整构建所有项目
+- **后续构建**：仅重新构建变化的文件，显著提升构建速度
+- **缓存策略**：基于内容的缓存，相同输入产生相同输出时跳过构建
+
+```bash
+# 使用 Turbo 构建（推荐用于开发流程）
+bun run build:turbo
+
+# 强制重新构建所有项目
+bun run build:turbo --force
+
+# 查看构建缓存状态
+npx turbo prune
 ```
 
 ## 设计文档
@@ -95,33 +120,39 @@ bun run dev          # 独立启动该项目（端口 5200/5300/5100）
 
 ## 技术栈
 
-- **Portal**：Hono + Cloudflare Workers + Tailwind CSS
-- **子项目**：React 19 + p5.js + Vite 8 + Tailwind CSS 4
+- **Portal**：React 19 + Vite 8 + Tailwind CSS
+- **子项目**：React 19 + p5.js + @p5-wrapper/react + Vite 8 + Tailwind CSS 4
+- **部署**：Hono + Cloudflare Workers + Wrangler
 - **包管理器**：bun
 
 ## 对比维度
 
 ### 功能完整性
+
 - 是否实现了核心的链式运动
 - 是否包含生物行为系统
 - 交互功能是否完善
 
 ### 代码质量
+
 - 代码结构是否清晰
 - 是否遵循单一职责原则
 - 命名是否规范
 
 ### 算法选择
+
 - 选择了哪种链式运动算法
 - IK 实现方式
 - 是否有创新性
 
 ### 视觉表现
+
 - 生物的视觉风格
 - 动画流畅度
 - 是否有独特的视觉效果
 
 ### 架构设计
+
 - 是否采用了引擎与渲染分离
 - 模块划分是否合理
 - 可扩展性如何

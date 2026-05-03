@@ -8,23 +8,34 @@ Bio-Engine 是一个 **AI 模型能力对比测试项目**，在相同的设计�
 
 ## 架构
 
-**单 Worker 部署**：所有子项目直接构建到 `portal/public/`，由 Cloudflare Worker（Hono 应用）通过 `[assets]` 提供静态文件，主页是 Portal 卡片导航。
+**纯静态部署**：Portal（React SPA）和四个子项目全部构建到 `portal/public/`，由 Cloudflare Workers 的 `[assets]` 纯静态托管，无 Worker 入口函数。
 
-每个子项目的 Vite `base` 配置匹配路由前缀（如 `base: '/glm-5.1/'`），`build.outDir` 直接输出到 `../portal/public/<项目名>/`。
+项目使用 **bun workspaces**（见根 `package.json` 的 `workspaces` 字段），五个子项目（portal + 四个模型实现）各自独立，有自己的 `node_modules/`、`package.json`、`tsconfig.json`。根 `package.json` 只保留工具链依赖（turbo、wrangler、workers-types）。
 
-子项目各自独立，有自己的 `node_modules/`、`package.json`、`tsconfig.json`。Portal 入口是 `portal/src/index.ts`（Hono 路由 + 内联 HTML 模板）。
+每个子项目的 Vite `base` 配置匹配路由前缀（如 `base: '/glm-5.1/'`），`build.outDir` 直接输出到 `../portal/public/<项目名>/`。Portal 构建会清空 `portal/public/`，所以 **构建顺序是 Portal 先，子项目后**。
+
+Portal 开发模式下通过自定义 Vite 插件 `serveSubProjects()`（见 `portal/vite.config.ts`）代理已构建的子项目文件，因此需要先 `bun run build` 至少一次才能在 Portal 开发模式下访问子项目。
+
+**Turbo**（`turbo.json`）用于增量构建缓存。`build:turbo` 只重建变化的项目，`build` 是顺序执行的完整构建。
 
 ## 常用命令
 
 ```bash
-# 构建所有子项目到 portal/public/
+# 完整构建（顺序执行：portal → 四个子项目）
 bun run build
 
-# 开发：先构建，再用 wrangler 本地服务
-bun run build && bun run dev
+# Turbo 增量构建（推荐开发流程，只重建变化的项目）
+bun run build:turbo
 
-# 部署到 Cloudflare Workers
-bun run deploy
+# Portal Vite 开发服务器（端口 5173），需先 build 过子项目
+bun run dev
+
+# Wrangler 本地服务（端口 8787），模拟生产环境
+bun run dev:wrangler
+
+# 部署
+bun run deploy           # 完整构建后部署
+bun run deploy:turbo     # Turbo 构建后部署
 
 # 清理构建产物
 bun run clean
@@ -46,8 +57,19 @@ cd mimo-v2.5-pro && bun install && bun run dev # 端口 5400
 
 ```
 Bio-Engine/
-├── portal/src/index.ts        # Hono 应用（Portal 主页，内联 HTML）
-├── wrangler.toml              # Cloudflare Workers 配置（[assets] 指向 portal/public）
+├── portal/                    # Portal React SPA
+│   ├── src/
+│   │   ├── App.tsx            # 主页（Hero、QuickEntry 卡片、ModelSection 详情）
+│   │   ├── main.tsx           # React 入口
+│   │   ├── index.html         # HTML 模板（含内联主题切换脚本）
+│   │   ├── data/models.ts     # 模型元数据（名称、描述、SVG 图标路径、配色）
+│   │   ├── components/        # UI 组件（Hero、ModelSection、QuickEntry 等）
+│   │   ├── hooks/             # useScrollAnimation 等
+│   │   └── styles/            # globals.css + components.css（无 Tailwind）
+│   ├── vite.config.ts         # 含 serveSubProjects() 插件
+│   └── public/                # 构建产物（gitignore）
+├── wrangler.toml              # 纯 [assets] 静态托管，无 main 入口
+├── turbo.json                 # Turbo 构建缓存配置
 ├── docs/                      # 设计文档（所有模型共享）
 ├── kimi-k2.6/src/             # Kimi-K2.6 实现
 ├── glm-5.1/src/               # GLM-5.1 实现
@@ -60,27 +82,35 @@ Bio-Engine/
 每个子项目遵循 **引擎与渲染分离** 模式：
 
 - **engine/** — 纯算法层（数学工具、数据类型、脊柱/肢体运动、IK、行为系统、生物实体）。不调用任何绘图 API
-- **renderer/** — p5.js 渲染层，将引擎数据可视化
-- **components/** — React UI 组件（控制面板、画布容器等）
-- **App.tsx / main.tsx** — 入口，组装 React + p5 画布
+- **renderer/** 或 **render/** — p5.js 渲染层（DeepSeek-V4 使用 `render/`，其余使用 `renderer/`）
+- **components/** — React UI 组件（控制面板、画布容器等，部分子项目无此目录）
+- **App.tsx / main.tsx** — 入口
 
 引擎通过参数接收数据，通过返回值输出数据。四个子项目各自独立实现，互不依赖。
 
+子项目差异：
+- GLM-5.1 使用 `sketch.ts` 直接创建 p5 实例，其余通过 `@p5-wrapper/react` 的 React 组件包装
+- Tailwind CSS 4：仅 kimi-k2.6（`@tailwindcss/vite`）和 mimo-v2.5-pro（`@tailwindcss/postcss`）使用
+- GLM-5.1 有独立的 `vec2.ts` 向量类，其余项目在各自的 `math.ts` 中实现
+
 ## 技术栈
 
-- **子项目**：React 19 + p5.js + @p5-wrapper/react + Vite 8 + Tailwind CSS 4 + TypeScript
-- **Portal**：Hono + Cloudflare Workers (wrangler)
-- **包管理器**：bun
+- **子项目**：React 19 + p5.js + @p5-wrapper/react + Vite 8 + TypeScript
+- **Portal**：React 19 + Vite 8（纯 SPA，CSS 无框架）
+- **构建缓存**：Turbo（`turbo.json`，增量构建 + 内容缓存）
+- **部署**：Cloudflare Workers [assets] 静态托管 + Wrangler
+- **包管理器**：bun（`packageManager: "bun@1.3.10"`）
 
 ## 端口与路由
 
-| 目录 | 端口 | 路由前缀 |
+| 目录 | 独立开发端口 | 路由前缀 |
 | --- | --- | --- |
 | kimi-k2.6 | 5100 | `/kimi-k2.6/` |
 | glm-5.1 | 5200 | `/glm-5.1/` |
 | deepseek-v4 | 5300 | `/deepseek-v4/` |
 | mimo-v2.5-pro | 5400 | `/mimo-v2.5-pro/` |
-| Portal (wrangler) | 默认 | `/` |
+| Portal（Vite dev） | 5173 | `/` |
+| Portal（wrangler） | 8787 | `/` |
 
 ## 核心概念
 
