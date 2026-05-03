@@ -1,7 +1,7 @@
 import type p5 from 'p5'
 import type { CreatureConfig, CreatureState, SpineSegment, Vec2, Particle } from '../engine/types'
 import { BehaviorState } from '../engine/types'
-import { vec2, add, sub, scale, normalize, length, lerp, perpendicular } from '../engine/math'
+import { add, scale, length, lerp } from '../engine/math'
 import { getSpineNormal } from '../engine/spine'
 import { getCreatureLegIKResults } from '../engine/creature'
 
@@ -14,6 +14,28 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
         b: parseInt(result[3], 16),
       }
     : { r: 0, g: 0, b: 0 }
+}
+
+function blendBodyColor(
+  t: number,
+  headRgb: { r: number; g: number; b: number },
+  bodyRgb: { r: number; g: number; b: number },
+  tailRgb: { r: number; g: number; b: number }
+): { r: number; g: number; b: number } {
+  if (t < 0.3) {
+    const lt = t / 0.3
+    return {
+      r: lerp(headRgb.r, bodyRgb.r, lt),
+      g: lerp(headRgb.g, bodyRgb.g, lt),
+      b: lerp(headRgb.b, bodyRgb.b, lt),
+    }
+  }
+  const lt = (t - 0.3) / 0.7
+  return {
+    r: lerp(bodyRgb.r, tailRgb.r, lt),
+    g: lerp(bodyRgb.g, tailRgb.g, lt),
+    b: lerp(bodyRgb.b, tailRgb.b, lt),
+  }
 }
 
 export function drawCreature(
@@ -94,36 +116,14 @@ function drawBody(
   // Left edge (head to tail)
   for (let i = 0; i < leftEdge.length; i++) {
     const t = i / (leftEdge.length - 1)
-    let r: number, g: number, b: number
-    if (t < 0.3) {
-      const lt = t / 0.3
-      r = lerp(headRgb.r, bodyRgb.r, lt)
-      g = lerp(headRgb.g, bodyRgb.g, lt)
-      b = lerp(headRgb.b, bodyRgb.b, lt)
-    } else {
-      const lt = (t - 0.3) / 0.7
-      r = lerp(bodyRgb.r, tailRgb.r, lt)
-      g = lerp(bodyRgb.g, tailRgb.g, lt)
-      b = lerp(bodyRgb.b, tailRgb.b, lt)
-    }
+    const { r, g, b } = blendBodyColor(t, headRgb, bodyRgb, tailRgb)
     p.fill(r, g, b, 230)
     p.vertex(leftEdge[i].x, leftEdge[i].y)
   }
   // Right edge (tail to head)
   for (let i = rightEdge.length - 1; i >= 0; i--) {
     const t = i / (rightEdge.length - 1)
-    let r: number, g: number, b: number
-    if (t < 0.3) {
-      const lt = t / 0.3
-      r = lerp(headRgb.r, bodyRgb.r, lt)
-      g = lerp(headRgb.g, bodyRgb.g, lt)
-      b = lerp(headRgb.b, bodyRgb.b, lt)
-    } else {
-      const lt = (t - 0.3) / 0.7
-      r = lerp(bodyRgb.r, tailRgb.r, lt)
-      g = lerp(bodyRgb.g, tailRgb.g, lt)
-      b = lerp(bodyRgb.b, tailRgb.b, lt)
-    }
+    const { r, g, b } = blendBodyColor(t, headRgb, bodyRgb, tailRgb)
     p.fill(r, g, b, 230)
     p.vertex(rightEdge[i].x, rightEdge[i].y)
   }

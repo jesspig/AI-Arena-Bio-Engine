@@ -1,11 +1,24 @@
 import type { BehaviorConfig, Vec2, WorldBounds } from './types'
 import { BehaviorState } from './types'
-import { vec2, add, sub, scale, normalize, length, distance, noise2D, randomRange, lerp } from './math'
+import { vec2, add, sub, scale, normalize, distance, noise2D } from './math'
 
 export interface BehaviorUpdate {
   target: Vec2
   speedMultiplier: number
   newState?: BehaviorState
+}
+
+export interface BehaviorContext {
+  currentState: BehaviorState
+  headPos: Vec2
+  currentTarget: Vec2 | null
+  noiseOffset: number
+  stateTimer: number
+  mousePos: Vec2 | null
+  mouseDown: boolean
+  config: BehaviorConfig
+  bounds: WorldBounds
+  dt: number
 }
 
 export function createDefaultBehaviorConfig(): BehaviorConfig {
@@ -21,18 +34,8 @@ export function createDefaultBehaviorConfig(): BehaviorConfig {
   }
 }
 
-export function updateBehavior(
-  currentState: BehaviorState,
-  headPos: Vec2,
-  currentTarget: Vec2 | null,
-  noiseOffset: number,
-  stateTimer: number,
-  mousePos: Vec2 | null,
-  mouseDown: boolean,
-  config: BehaviorConfig,
-  bounds: WorldBounds,
-  dt: number
-): BehaviorUpdate {
+export function updateBehavior(ctx: BehaviorContext): BehaviorUpdate {
+  const { currentState, headPos, currentTarget, noiseOffset, stateTimer, mousePos, mouseDown, config, bounds, dt } = ctx
   const time = noiseOffset + dt
 
   // Check for mouse interaction
@@ -131,7 +134,7 @@ export function updateBehavior(
       }
 
       return {
-        target: mousePos!,
+        target: mousePos,
         speedMultiplier: config.curiousSpeed,
       }
     }

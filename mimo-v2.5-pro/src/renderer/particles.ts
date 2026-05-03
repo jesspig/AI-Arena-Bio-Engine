@@ -1,5 +1,5 @@
 import type { Particle, Vec2 } from '../engine/types'
-import { vec2, add, scale, length, normalize, sub, randomRange } from '../engine/math'
+import { vec2, add, scale, length, normalize, randomRange } from '../engine/math'
 
 export function createParticle(
   pos: Vec2,

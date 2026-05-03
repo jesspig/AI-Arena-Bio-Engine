@@ -1,6 +1,6 @@
-import type { CreatureConfig, CreatureState, SpineSegment, LegState, WorldBounds, Vec2 } from './types'
+import type { CreatureConfig, CreatureState, WorldBounds, Vec2 } from './types'
 import { BehaviorState } from './types'
-import { vec2, add, sub, scale, normalize, length, distance, lerp, noise2D, randomRange } from './math'
+import { vec2, add, sub, scale, length, distance, randomRange } from './math'
 import { createSpine, updateSpineChain, moveHeadToward, getSpineDirection } from './spine'
 import { createLegState, updateLeg, getLegIKResult } from './leg'
 import { updateBehavior, createDefaultBehaviorConfig } from './behavior'
@@ -89,18 +89,18 @@ export function updateCreature(
   newState.breathPhase += dt * 2
 
   // Update behavior
-  const behaviorResult = updateBehavior(
-    state.behaviorState,
-    state.spine[0].pos,
-    state.target,
-    state.noiseOffset,
-    state.stateTimer,
+  const behaviorResult = updateBehavior({
+    currentState: state.behaviorState,
+    headPos: state.spine[0].pos,
+    currentTarget: state.target,
+    noiseOffset: state.noiseOffset,
+    stateTimer: state.stateTimer,
     mousePos,
     mouseDown,
-    config.behavior,
+    config: config.behavior,
     bounds,
-    dt
-  )
+    dt,
+  })
 
   newState.target = behaviorResult.target
 
