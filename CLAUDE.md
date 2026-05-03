@@ -12,14 +12,16 @@ Bio-Engine 是一个 **AI 模型能力对比测试项目**，在相同的设计�
 
 每个子项目的 Vite `base` 配置匹配路由前缀（如 `base: '/glm-5.1/'`），`build.outDir` 直接输出到 `../portal/public/<项目名>/`。
 
+子项目各自独立，有自己的 `node_modules/`、`package.json`、`tsconfig.json`。Portal 入口是 `portal/src/index.ts`（Hono 路由 + 内联 HTML 模板）。
+
 ## 常用命令
 
 ```bash
-# 构建：构建所有子项目到 portal/public/
+# 构建所有子项目到 portal/public/
 bun run build
 
 # 开发：先构建，再用 wrangler 本地服务
-bun run build && bun run dev    # wrangler 默认端口
+bun run build && bun run dev
 
 # 部署到 Cloudflare Workers
 bun run deploy
@@ -31,31 +33,38 @@ bun run clean
 bun run build:kimi-k2.6
 bun run build:glm-5.1
 bun run build:deepseek-v4
+bun run build:mimo-v2.5-pro
 
 # 单独开发某个子项目（进入对应目录，独立 Vite HMR）
-cd kimi-k2.6 && bun install && bun run dev   # 端口 5100
-cd glm-5.1   && bun install && bun run dev   # 端口 5200
-cd deepseek-v4 && bun install && bun run dev # 端口 5300
+cd kimi-k2.6 && bun install && bun run dev     # 端口 5100
+cd glm-5.1 && bun install && bun run dev       # 端口 5200
+cd deepseek-v4 && bun install && bun run dev   # 端口 5300
+cd mimo-v2.5-pro && bun install && bun run dev # 端口 5400
 ```
 
 ## 项目结构
 
 ```
 Bio-Engine/
-├── portal/src/              # Hono 应用（Portal 主页）
-├── wrangler.toml            # Cloudflare Workers 配置
-├── docs/                    # 设计文档（所有模型共享）
-├── glm-5.1/src/             # GLM-5.1 实现
-│   ├── engine/              #   纯算法层（vec2, types, spine, limb, behavior, creature）
-│   └── renderer/            #   p5.js 渲染（creatureRenderer, particles）
-├── deepseek-v4/src/         # DeepSeek-V4 实现
-│   ├── engine/              #   纯算法层（math, types, spine, leg, behavior, creature）
-│   └── render/              #   p5.js 渲染（creatureRender）
-└── kimi-k2.6/src/           # Kimi-K2.6 实现
-    ├── engine/              #   纯算法层（math, types, creature, particles, world）
-    ├── renderer/            #   p5.js 渲染（p5Renderer）
-    └── components/          #   UI 组件（ControlPanel, InfoOverlay, BioCanvas）
+├── portal/src/index.ts        # Hono 应用（Portal 主页，内联 HTML）
+├── wrangler.toml              # Cloudflare Workers 配置（[assets] 指向 portal/public）
+├── docs/                      # 设计文档（所有模型共享）
+├── kimi-k2.6/src/             # Kimi-K2.6 实现
+├── glm-5.1/src/               # GLM-5.1 实现
+├── deepseek-v4/src/           # DeepSeek-V4 实现
+└── mimo-v2.5-pro/src/         # Mimo-V2.5-Pro 实现
 ```
+
+## 子项目内部架构
+
+每个子项目遵循 **引擎与渲染分离** 模式：
+
+- **engine/** — 纯算法层（数学工具、数据类型、脊柱/肢体运动、IK、行为系统、生物实体）。不调用任何绘图 API
+- **renderer/** — p5.js 渲染层，将引擎数据可视化
+- **components/** — React UI 组件（控制面板、画布容器等）
+- **App.tsx / main.tsx** — 入口，组装 React + p5 画布
+
+引擎通过参数接收数据，通过返回值输出数据。四个子项目各自独立实现，互不依赖。
 
 ## 技术栈
 
@@ -63,24 +72,15 @@ Bio-Engine/
 - **Portal**：Hono + Cloudflare Workers (wrangler)
 - **包管理器**：bun
 
-## 端口
+## 端口与路由
 
 | 目录 | 端口 | 路由前缀 |
 | --- | --- | --- |
 | kimi-k2.6 | 5100 | `/kimi-k2.6/` |
 | glm-5.1 | 5200 | `/glm-5.1/` |
 | deepseek-v4 | 5300 | `/deepseek-v4/` |
+| mimo-v2.5-pro | 5400 | `/mimo-v2.5-pro/` |
 | Portal (wrangler) | 默认 | `/` |
-
-## 子项目架构模式
-
-推荐 **引擎与渲染分离**：
-
-- **engine/** — 纯算法，不调用任何绘图 API。包含数据结构、数学工具、链式运动、IK、行为系统
-- **renderer/** — p5.js 绘图，将引擎数据可视化，处理用户交互
-- **components/** — React UI（控制面板、画布容器等）
-
-引擎通过参数接收数据，通过返回值输出数据。三个子项目各自独立实现，互不依赖。
 
 ## 核心概念
 
