@@ -1,4 +1,5 @@
 import type { Model } from '../data/models'
+import { LogoMap } from '../data/logoMap'
 
 interface Props {
   models: Model[]
@@ -17,31 +18,7 @@ export function QuickEntry({ models }: Props) {
           {models.map((model) => (
             <a key={model.id} href={`/${model.id}`} className="quick-card" style={{ '--card-color': model.color } as React.CSSProperties}>
               <div className="quick-card-icon">
-                {model.id === 'kimi-k2.6' && (
-                  <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
-                    <path d={model.iconPath} fill="#027AFF" />
-                    <path d={model.iconPath2} fill={model.color} />
-                  </svg>
-                )}
-                {model.id === 'glm-5.1' && (
-                  <svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
-                    <path d={model.iconPath!} fill={model.color} opacity="0.12" />
-                    <path d={model.iconPath2!} fill={model.color} />
-                    <path d={model.iconPath3!} fill={model.color} />
-                  </svg>
-                )}
-                {model.id === 'deepseek-v4' && (
-                  <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
-                    <path d={model.iconPath} fill={model.color} />
-                    <path d={model.iconPath2!} fill={model.color} />
-                  </svg>
-                )}
-                {model.id === 'mimo-v2.5-pro' && (
-                  <svg viewBox="0 0 808 808" xmlns="http://www.w3.org/2000/svg">
-                    <path d={model.iconPath} fill={model.color} opacity="0.12" />
-                    <path d={model.iconPath2!} fill={model.color} />
-                  </svg>
-                )}
+                <img src={LogoMap[model.iconFile]} alt={model.name} />
               </div>
               <div className="quick-card-content">
                 <span className="quick-card-name">{model.name}</span>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Model } from '../data/models'
+import { LogoMap } from '../data/logoMap'
 
 interface Props {
   model: Model
@@ -95,31 +96,7 @@ export function ModelSection({ model, index }: Props) {
           <div className="sidebar-sticky">
             <div className="sidebar-visual" style={{ background: `linear-gradient(135deg, ${model.color}15 0%, transparent 70%)` }}>
               <div className="sidebar-icon" style={{ background: `${model.color}20`, border: `1px solid ${model.color}40` }}>
-                {model.id === 'kimi-k2.6' && (
-                  <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
-                    <path d={model.iconPath} fill="#027AFF" />
-                    <path d={model.iconPath2} fill={model.color} />
-                  </svg>
-                )}
-                {model.id === 'glm-5.1' && (
-                  <svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
-                    <path d={model.iconPath!} fill={model.color} opacity="0.12" />
-                    <path d={model.iconPath2!} fill={model.color} />
-                    <path d={model.iconPath3!} fill={model.color} />
-                  </svg>
-                )}
-                {model.id === 'deepseek-v4' && (
-                  <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
-                    <path d={model.iconPath} fill={model.color} />
-                    <path d={model.iconPath2!} fill={model.color} />
-                  </svg>
-                )}
-                {model.id === 'mimo-v2.5-pro' && (
-                  <svg viewBox="0 0 808 808" xmlns="http://www.w3.org/2000/svg">
-                    <path d={model.iconPath} fill={model.color} opacity="0.12" />
-                    <path d={model.iconPath2!} fill={model.color} />
-                  </svg>
-                )}
+                <img src={LogoMap[model.iconFile]} alt={model.name} />
               </div>
               <div className="sidebar-glow" style={{ background: `radial-gradient(circle, ${model.color}30 0%, transparent 70%)` }} />
             </div>
@@ -168,18 +145,7 @@ export function ModelSection({ model, index }: Props) {
             ))}
           </div>
 
-          <div className="content-footer reveal">
-            <a
-              href={`/${model.id}`}
-              className="content-cta"
-              style={{ borderColor: model.color, color: model.color }}
-            >
-              <span>完整文档</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </a>
-          </div>
+
         </div>
       </div>
     </section>
