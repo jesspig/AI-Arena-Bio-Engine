@@ -1,13 +1,19 @@
 import { Particle, Vector2, Creature } from './types';
 import { createVector, randomRange } from './math';
 
+const TRAIL_INTENSITY_MULTIPLIER = 0.4;
+const TRAIL_SPAWN_CHANCE_BASE = 0.15;
+const GLOW_SPAWN_CHANCE_BASE = 0.3;
+const SEGMENT_GLOW_SKIP = 4;
+const TAIL_BRIGHTNESS_SHIFT = 40;
+
 export function spawnTrailParticle(
   particles: Particle[],
   position: Vector2,
   hue: number,
   intensity: number
 ): void {
-  if (Math.random() > intensity * 0.4) return;
+  if (Math.random() > intensity * TRAIL_INTENSITY_MULTIPLIER) return;
 
   const angle = randomRange(0, Math.PI * 2);
   const speed = randomRange(0.2, 1.2);
@@ -30,7 +36,7 @@ export function spawnGlowParticle(
   position: Vector2,
   hue: number
 ): void {
-  if (Math.random() > 0.15) return;
+  if (Math.random() > TRAIL_SPAWN_CHANCE_BASE) return;
 
   particles.push({
     position: createVector(
@@ -65,10 +71,10 @@ export function spawnCreatureParticles(creature: Creature, particles: Particle[]
   const tail = creature.segments[creature.segments.length - 1];
   spawnTrailParticle(particles, tail.position, creature.config.colorHue, creature.config.glowIntensity);
 
-  for (let i = 0; i < creature.segments.length; i += 4) {
-    if (Math.random() > 0.3) continue;
+  for (let i = 0; i < creature.segments.length; i += SEGMENT_GLOW_SKIP) {
+    if (Math.random() > GLOW_SPAWN_CHANCE_BASE) continue;
     const seg = creature.segments[i];
     const brightness = 1 - i / creature.segments.length;
-    spawnGlowParticle(particles, seg.position, creature.config.colorHue + brightness * 40);
+    spawnGlowParticle(particles, seg.position, creature.config.colorHue + brightness * TAIL_BRIGHTNESS_SHIFT);
   }
 }
