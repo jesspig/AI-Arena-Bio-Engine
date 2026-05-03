@@ -17,11 +17,12 @@ export class ParticleSystem {
       if (this.particles.length >= MAX_PARTICLES) break
       const angle = Math.random() * Math.PI * 2
       const speed = 0.2 + Math.random() * 0.8
+      const life = PARTICLE_LIFE_MIN + Math.random() * (PARTICLE_LIFE_MAX - PARTICLE_LIFE_MIN)
       this.particles.push({
         pos: { x: pos.x + (Math.random() - 0.5) * 6, y: pos.y + (Math.random() - 0.5) * 6 },
         vel: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed },
-        life: PARTICLE_LIFE_MIN + Math.random() * (PARTICLE_LIFE_MAX - PARTICLE_LIFE_MIN),
-        maxLife: PARTICLE_LIFE_MIN + Math.random() * (PARTICLE_LIFE_MAX - PARTICLE_LIFE_MIN),
+        life,
+        maxLife: life,
         size: PARTICLE_SIZE_MIN + Math.random() * (PARTICLE_SIZE_MAX - PARTICLE_SIZE_MIN),
         hue: hue + (Math.random() - 0.5) * 20,
       })
@@ -46,11 +47,12 @@ export function spawnAmbientParticles(system: ParticleSystem, canvasWidth: numbe
     if (system.particles.length >= MAX_PARTICLES) break
     const angle = Math.random() * Math.PI * 2
     const speed = 0.05 + Math.random() * 0.15
+    const life = 80 + Math.random() * 120
     system.particles.push({
       pos: { x: Math.random() * canvasWidth, y: Math.random() * canvasHeight },
       vel: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed },
-      life: 80 + Math.random() * 120,
-      maxLife: 80 + Math.random() * 120,
+      life,
+      maxLife: life,
       size: 1 + Math.random() * 2,
       hue: 180 + Math.sin(time * 0.01) * 30,
     })

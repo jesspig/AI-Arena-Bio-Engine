@@ -66,9 +66,6 @@ export function updateSpine(spine: SpineState, headTarget: Vec2, headAngle: numb
     segments[i].angle = a
   }
 
-  for (let i = 0; i < segments.length; i++) {
-    segments[i].width = computeWidth(i, segments.length)
-  }
 }
 
 export function getSpineNormal(spine: SpineState, index: number): Vec2 {

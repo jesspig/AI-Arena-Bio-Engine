@@ -39,9 +39,6 @@ function solveTwoJointIK(hip: Vec2, target: Vec2, upperLen: number, lowerLen: nu
   }
 
   const actualDist = dist(hip, clampedTarget)
-  const cosKnee = (upperLen * upperLen + lowerLen * lowerLen - actualDist * actualDist) / (2 * upperLen * lowerLen)
-  Math.max(-1, Math.min(1, cosKnee))
-
   const cosHip = (upperLen * upperLen + actualDist * actualDist - lowerLen * lowerLen) / (2 * upperLen * actualDist)
   const clampedCosHip = Math.max(-1, Math.min(1, cosHip))
   const hipOffset = Math.acos(clampedCosHip)

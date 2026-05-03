@@ -1,11 +1,24 @@
 import type p5 from 'p5'
-import type { CreatureSnapshot } from '../engine/types'
-import type { ParticleData } from '../engine/types'
+import type { CreatureSnapshot, ParticleData, BehaviorState, SpineSegment } from '../engine/types'
+import type { Vec2 } from '../engine/vec2'
 import { sub, add, scale, normalize, perpendicular, fromAngle, rotate } from '../engine/vec2'
 
 const BASE_HUE = 170
 const SATURATION = 70
 const BRIGHTNESS = 60
+
+function getStateHueShift(state: BehaviorState): number {
+  if (state === 'startle') return 60
+  if (state === 'hunt') return 30
+  return 0
+}
+
+function getSegmentNormal(spine: SpineSegment[], i: number): Vec2 {
+  const dir = i < spine.length - 1
+    ? sub(spine[i + 1].pos, spine[i].pos)
+    : sub(spine[i].pos, spine[i - 1].pos)
+  return normalize(perpendicular(dir))
+}
 
 export function renderCreature(p: p5, snapshot: CreatureSnapshot): void {
   renderBodyGlow(p, snapshot)
@@ -32,15 +45,14 @@ function renderBodyGlow(p: p5, snapshot: CreatureSnapshot): void {
 
 function renderBody(p: p5, snapshot: CreatureSnapshot): void {
   const { spine, behavior } = snapshot
-  const stateHueShift = behavior.state === 'startle' ? 60 : behavior.state === 'hunt' ? 30 : 0
+  const stateHueShift = getStateHueShift(behavior.state)
 
   const leftPoints: { x: number; y: number }[] = []
   const rightPoints: { x: number; y: number }[] = []
 
   for (let i = 0; i < spine.length; i++) {
     const seg = spine[i]
-    const dir = i < spine.length - 1 ? sub(spine[i + 1].pos, seg.pos) : sub(seg.pos, spine[i - 1].pos)
-    const norm = normalize(perpendicular(dir))
+    const norm = getSegmentNormal(spine, i)
     const w = seg.width
     leftPoints.push(add(seg.pos, scale(norm, w)))
     rightPoints.push(add(seg.pos, scale(norm, -w)))
@@ -58,15 +70,13 @@ function renderBody(p: p5, snapshot: CreatureSnapshot): void {
   for (let i = 0; i < spine.length; i++) {
     const seg = spine[i]
     const innerW = seg.width * 0.5
-    const dir = i < spine.length - 1 ? sub(spine[i + 1].pos, seg.pos) : sub(seg.pos, spine[i - 1].pos)
-    const norm = normalize(perpendicular(dir))
+    const norm = getSegmentNormal(spine, i)
     p.vertex(add(seg.pos, scale(norm, innerW)).x, add(seg.pos, scale(norm, innerW)).y)
   }
   for (let i = spine.length - 1; i >= 0; i--) {
     const seg = spine[i]
     const innerW = seg.width * 0.5
-    const dir = i < spine.length - 1 ? sub(spine[i + 1].pos, seg.pos) : sub(seg.pos, spine[i - 1].pos)
-    const norm = normalize(perpendicular(dir))
+    const norm = getSegmentNormal(spine, i)
     p.vertex(add(seg.pos, scale(norm, -innerW)).x, add(seg.pos, scale(norm, -innerW)).y)
   }
   p.endShape(p.CLOSE)
@@ -101,7 +111,7 @@ function renderSpineDetails(p: p5, snapshot: CreatureSnapshot): void {
 
 function renderLimbs(p: p5, snapshot: CreatureSnapshot): void {
   const { limbs, time, behavior } = snapshot
-  const stateHueShift = behavior.state === 'startle' ? 60 : behavior.state === 'hunt' ? 30 : 0
+  const stateHueShift = getStateHueShift(behavior.state)
 
   for (const limb of limbs) {
     const limbHue = BASE_HUE + stateHueShift - 10
@@ -125,7 +135,7 @@ function renderLimbs(p: p5, snapshot: CreatureSnapshot): void {
 
 function renderHead(p: p5, snapshot: CreatureSnapshot): void {
   const { headPos, headAngle, spine, behavior } = snapshot
-  const stateHueShift = behavior.state === 'startle' ? 60 : behavior.state === 'hunt' ? 30 : 0
+  const stateHueShift = getStateHueShift(behavior.state)
 
   const headWidth = spine[0].width * 1.3
   const headLength = 20
@@ -146,7 +156,7 @@ function renderHead(p: p5, snapshot: CreatureSnapshot): void {
 
 function renderEyes(p: p5, snapshot: CreatureSnapshot): void {
   const { headPos, headAngle, time, behavior } = snapshot
-  const stateHueShift = behavior.state === 'startle' ? 60 : behavior.state === 'hunt' ? 30 : 0
+  const stateHueShift = getStateHueShift(behavior.state)
 
   const eyeOffset = 10
   const eyeSpread = 7
@@ -178,7 +188,7 @@ function renderEyes(p: p5, snapshot: CreatureSnapshot): void {
 
 function renderGills(p: p5, snapshot: CreatureSnapshot): void {
   const { spine, time, behavior } = snapshot
-  const stateHueShift = behavior.state === 'startle' ? 60 : 0
+  const stateHueShift = getStateHueShift(behavior.state)
 
   const gillBaseIndex = 2
   const gillCount = 3
@@ -186,8 +196,7 @@ function renderGills(p: p5, snapshot: CreatureSnapshot): void {
   for (let g = 0; g < gillCount; g++) {
     const seg = spine[gillBaseIndex + g]
     if (!seg) continue
-    const dir = sub(spine[Math.min(gillBaseIndex + g + 1, spine.length - 1)].pos, seg.pos)
-    const norm = normalize(perpendicular(dir))
+    const norm = getSegmentNormal(spine, gillBaseIndex + g)
     const wave = Math.sin(time * 0.06 + g * 1.5) * 0.3
 
     for (const side of [-1, 1]) {
@@ -196,7 +205,7 @@ function renderGills(p: p5, snapshot: CreatureSnapshot): void {
         gillRoot,
         add(
           scale(norm, side * (8 + wave * 4)),
-          scale(normalize(dir), -3 + wave * 2),
+          scale(normalize(sub(spine[Math.min(gillBaseIndex + g + 1, spine.length - 1)].pos, seg.pos)), -3 + wave * 2),
         ),
       )
 
