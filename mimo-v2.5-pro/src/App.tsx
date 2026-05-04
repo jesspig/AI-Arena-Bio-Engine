@@ -40,7 +40,7 @@ export default function App() {
           {/* Title */}
           <div className="text-right">
             <h1 className="text-sm font-semibold text-white/70 tracking-wide">
-              Mimo V2.5 Pro
+              MiMo V2.5 Pro
             </h1>
             <p className="text-[11px] text-gray-500 mt-0.5">
               程序化脊椎爬行动物
