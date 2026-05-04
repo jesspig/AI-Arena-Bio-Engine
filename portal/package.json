@@ -1,6 +1,7 @@
 {
   "name": "bio-engine-portal",
   "version": "1.0.0",
+  "description": "Bio-Engine Portal",
   "type": "module",
   "scripts": {
     "dev": "vite",

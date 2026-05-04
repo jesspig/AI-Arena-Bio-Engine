@@ -64,7 +64,7 @@ function App() {
         ))}
 
         <footer className="footer">
-          <p>Bio-Engine &copy; 2025 &mdash; AI 模型能力对比测试</p>
+          <p>Bio-Engine &copy; 2026 &mdash; AI-Arena 生物引擎主题</p>
           <p>Powered by React + Vite + Cloudflare Workers</p>
         </footer>
       </main>

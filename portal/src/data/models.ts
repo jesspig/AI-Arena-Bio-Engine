@@ -90,7 +90,7 @@ export const MODELS: Model[] = [
   },
   {
     id: 'mimo-v2.5-pro',
-    name: 'Mimo-V2.5-Pro',
+    name: 'MiMo-V2.5-Pro',
     tagline: '一条不存在于自然界、却活在代码里的蜥蜴',
     desc: '小米推出的多模态大模型',
     color: '#ff6900',

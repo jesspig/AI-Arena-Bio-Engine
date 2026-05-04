@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
 
+const THEME_KEY = 'bio-engine-theme'
+
 export function ThemeToggle() {
   useEffect(() => {
     const toggle = document.getElementById('theme-toggle')
@@ -7,7 +9,7 @@ export function ThemeToggle() {
 
     const applyTheme = (theme: string) => {
       html.setAttribute('data-theme', theme)
-      localStorage.setItem('bio-engine-theme', theme)
+      localStorage.setItem(THEME_KEY, theme)
     }
 
     toggle?.addEventListener('click', () => {
@@ -16,7 +18,7 @@ export function ThemeToggle() {
     })
 
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-      if (!localStorage.getItem('bio-engine-theme')) {
+      if (!localStorage.getItem(THEME_KEY)) {
         applyTheme(e.matches ? 'dark' : 'light')
       }
     })

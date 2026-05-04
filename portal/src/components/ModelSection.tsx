@@ -43,7 +43,7 @@ const README_CONTENT: Record<string, { title: string; sections: { title: string;
     ]
   },
   'mimo-v2.5-pro': {
-    title: 'Mimo V2.5 Pro — 程序化脊椎爬行动物',
+    title: 'MiMo V2.5 Pro — 程序化脊椎爬行动物',
     sections: [
       { title: '它是什么', content: '这是一个完全由程序驱动生成的虚拟生物。没有预制动画，没有关键帧，没有 sprite sheet。它的每一次蜿蜒、每一步行走、每一个呼吸，都是数学公式实时计算的结果。', isQuote: true },
       { title: '设计灵感', content: '从一条蛇的运动开始，给蛇加上腿。脊椎提供推进力、腿提供支撑力。而更有趣的是——当你把这种机制交给代码而不是手绘师，运动的"瑕疵"反而成了生命力的来源。腿偶尔抬得不够高、转弯时身体略微打滑、停下来时尾巴还在惯性中摆动……这些不是 bug，是 character。', isQuote: true },

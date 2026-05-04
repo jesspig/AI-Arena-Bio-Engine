@@ -4,7 +4,7 @@ export function ProjectIntro() {
       <div className="intro-hero">
         <div className="intro-badge">关于项目</div>
         <h2>Bio-Engine</h2>
-        <p className="intro-tagline">AI 模型能力对比测试平台</p>
+        <p className="intro-tagline">生物引擎 · AI 模型能力对比</p>
       </div>
 
       <div className="intro-grid">
@@ -15,7 +15,7 @@ export function ProjectIntro() {
             </svg>
           </div>
           <h3>实验目的</h3>
-          <p>在相同的设计文档基础上，让不同的 AI 模型自由发挥，对比它们在算法思路、代码架构、视觉风格和功能完整性方面的差异。这不是一个「按规格实现」的项目，而是一个启发创造力的画布。</p>
+          <p>完全开放式的创意测试。唯一限制是符合生物引擎主题，其他所有内容模型自由发挥。测试各模型在审美、架构、代码、设计等维度的能力。</p>
         </div>
 
         <div className="intro-card intro-method">
@@ -24,8 +24,8 @@ export function ProjectIntro() {
               <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
             </svg>
           </div>
-          <h3>实验方法</h3>
-          <p>所有子项目共享相同的设计文档（docs/），包括核心概念、算法参考、架构建议等。每个模型根据这些文档独立实现，最终通过对比揭示不同模型在创造力、架构思维和工程实践上的差异。</p>
+          <h3>参与方式</h3>
+          <p>所有模型共享相同的设计文档（docs/），包括核心概念、算法参考、架构建议等。每个模型根据这些文档独立实现，展现各自的创意和工程能力。</p>
         </div>
 
         <div className="intro-card intro-models">
@@ -39,7 +39,7 @@ export function ProjectIntro() {
             <span className="model-tag" style={{ background: 'rgba(26,136,255,0.15)', color: '#1a88ff' }}>Kimi-K2.6</span>
             <span className="model-tag" style={{ background: 'rgba(16,65,243,0.15)', color: '#1041f3' }}>GLM-5.1</span>
             <span className="model-tag" style={{ background: 'rgba(77,107,254,0.15)', color: '#4D6BFE' }}>DeepSeek-V4</span>
-            <span className="model-tag" style={{ background: 'rgba(255,105,0,0.15)', color: '#ff6900' }}>Mimo-V2.5-Pro</span>
+            <span className="model-tag" style={{ background: 'rgba(255,105,0,0.15)', color: '#ff6900' }}>MiMo-V2.5-Pro</span>
           </div>
         </div>
 
@@ -49,14 +49,14 @@ export function ProjectIntro() {
               <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
           </div>
-          <h3>设计理念</h3>
-          <p>算法是工具，不是教条。希望这些实现能给你一些灵感，去创造属于你自己的生命。</p>
+          <h3>开发理念</h3>
+          <p>程序化动画没有标准答案。这不是一个「按规格实现」的项目，而是一个启发创造力的画布。</p>
         </div>
       </div>
 
       <div className="intro-cta">
         <a href="#kimi-k2.6" className="intro-link">
-          <span>探索 Kimi 的实现</span>
+          <span>向下探索各模型实现</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M19 9l-7 7-7-7" />
           </svg>
