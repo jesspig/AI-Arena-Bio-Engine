@@ -8,7 +8,7 @@ Bio-Engine 是一个 **AI 模型能力对比测试项目**，在相同的设计�
 
 ## 架构
 
-**纯静态部署**：Portal（React SPA）和四个子项目全部构建到 `portal/public/`，由 Cloudflare Workers 的 `[assets]` 纯静态托管，无 Worker 入口函数。
+**纯静态部署**：Portal（React SPA）和四个子项目全部构建到 `portal/public/`，由 Cloudflare Workers 的 `[assets]` 纯静态托管（`wrangler.toml`），无 Worker 入口函数。
 
 项目使用 **bun workspaces**（见根 `package.json` 的 `workspaces` 字段），五个子项目（portal + 四个模型实现）各自独立，有自己的 `node_modules/`、`package.json`、`tsconfig.json`。根 `package.json` 只保留工具链依赖（turbo、wrangler、workers-types）。
 
@@ -17,6 +17,13 @@ Bio-Engine 是一个 **AI 模型能力对比测试项目**，在相同的设计�
 Portal 开发模式下通过自定义 Vite 插件 `serveSubProjects()`（见 `portal/vite.config.ts`）代理已构建的子项目文件，因此需要先 `bun run build` 至少一次才能在 Portal 开发模式下访问子项目。
 
 **Turbo**（`turbo.json`）用于增量构建缓存。`build:turbo` 只重建变化的项目，`build` 是顺序执行的完整构建。
+
+## 初始设置
+
+```bash
+bun install          # 安装根级工具链依赖
+bun run build        # 首次完整构建（会自动在各子项目中执行 bun install）
+```
 
 ## 常用命令
 
@@ -53,24 +60,23 @@ cd deepseek-v4 && bun install && bun run dev   # 端口 5300
 cd mimo-v2.5-pro && bun install && bun run dev # 端口 5400
 ```
 
+## 构建细节
+
+- **Portal**：仅 `vite build`（无 tsc 类型检查步骤，Portal 无 tsconfig）
+- **子项目**：`tsc -b && vite build`（先类型检查再构建，类型错误会阻止构建）
+- 子项目间互不依赖，可并行构建。Turbo 利用 `dependsOn: ["^build"]` 自动处理依赖拓扑
+
 ## 项目结构
 
 ```
 Bio-Engine/
-├── portal/                    # Portal React SPA
-│   ├── src/
-│   │   ├── App.tsx            # 主页（Hero、QuickEntry 卡片、ModelSection 详情）
-│   │   ├── main.tsx           # React 入口
-│   │   ├── index.html         # HTML 模板（含内联主题切换脚本）
-│   │   ├── data/models.ts     # 模型元数据（名称、描述、SVG 图标路径、配色）
-│   │   ├── components/        # UI 组件（Hero、ModelSection、QuickEntry 等）
-│   │   ├── hooks/             # useScrollAnimation 等
-│   │   └── styles/            # globals.css + components.css（无 Tailwind）
+├── portal/                    # Portal React SPA（纯 CSS，无 Tailwind）
+│   ├── src/data/models.ts     # 模型元数据（名称、描述、图标路径、配色）
 │   ├── vite.config.ts         # 含 serveSubProjects() 插件
-│   └── public/                # 构建产物（gitignore）
-├── wrangler.toml              # 纯 [assets] 静态托管，无 main 入口
-├── turbo.json                 # Turbo 构建缓存配置
-├── docs/                      # 设计文档（所有模型共享）
+│   └── public/                # 构建产物（gitignore，Portal 构建会清空此目录）
+├── wrangler.toml              # 纯 [assets] 静态托管，html_handling: auto-trailing-slash
+├── turbo.json                 # Turbo 增量构建缓存
+├── docs/                      # 设计文档（所有模型共享的参考规范）
 ├── kimi-k2.6/src/             # Kimi-K2.6 实现
 ├── glm-5.1/src/               # GLM-5.1 实现
 ├── deepseek-v4/src/           # DeepSeek-V4 实现
@@ -92,6 +98,7 @@ Bio-Engine/
 - GLM-5.1 使用 `sketch.ts` 直接创建 p5 实例，其余通过 `@p5-wrapper/react` 的 React 组件包装
 - Tailwind CSS 4：仅 kimi-k2.6（`@tailwindcss/vite`）和 mimo-v2.5-pro（`@tailwindcss/postcss`）使用
 - GLM-5.1 有独立的 `vec2.ts` 向量类，其余项目在各自的 `math.ts` 中实现
+- DeepSeek-V4 额外依赖 `simplex-noise`
 
 ## 技术栈
 
@@ -111,6 +118,13 @@ Bio-Engine/
 | mimo-v2.5-pro | 5400 | `/mimo-v2.5-pro/` |
 | Portal（Vite dev） | 5173 | `/` |
 | Portal（wrangler） | 8787 | `/` |
+
+## 质量保障
+
+- **无测试套件**：项目当前没有配置任何测试框架
+- **无 Lint/格式化**：项目没有 ESLint 或 Prettier 配置
+- **类型检查**：子项目通过 `tsc -b` 在构建时进行类型检查，Portal 无此步骤
+- **无 CI 管道**：部署依赖本地 `bun run deploy`
 
 ## 核心概念
 
