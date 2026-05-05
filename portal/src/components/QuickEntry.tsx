@@ -16,7 +16,7 @@ export function QuickEntry({ models }: Props) {
 
         <div className="quick-cards">
           {models.map((model) => (
-            <a key={model.id} href={`/${model.id}`} className="quick-card" style={{ '--card-color': model.color } as React.CSSProperties}>
+            <a key={model.id} href={`#${model.id}`} className="quick-card" style={{ '--card-color': model.color } as React.CSSProperties}>
               <div className="quick-card-icon">
                 <img src={LogoMap[model.iconFile]} alt={model.name} />
               </div>
@@ -25,7 +25,7 @@ export function QuickEntry({ models }: Props) {
                 <span className="quick-card-tagline">{model.tagline.split(' ')[0]}</span>
               </div>
               <svg className="quick-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M12 5l7 7-7 7" />
+                <path d="M19 9l-7 7-7-7" />
               </svg>
             </a>
           ))}

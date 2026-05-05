@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import type { Model } from '../data/models'
 import { LogoMap } from '../data/logoMap'
 
@@ -55,41 +55,79 @@ const README_CONTENT: Record<string, { title: string; sections: { title: string;
   }
 }
 
+interface ItemProgress {
+  opacity: number
+  translateY: number
+  scale: number
+}
+
 export function ModelSection({ model, index }: Props) {
   const sectionRef = useRef<HTMLElement>(null)
-  const [activeTab, setActiveTab] = useState(0)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [itemProgress, setItemProgress] = useState<ItemProgress[]>([])
   const isAltBg = index % 2 === 1
-
-  useEffect(() => {
-    const section = sectionRef.current
-    if (!section) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('visible')
-          }
-        })
-      },
-      { threshold: 0.05 }
-    )
-
-    section.querySelectorAll('.reveal').forEach((el) => observer.observe(el))
-    return () => observer.disconnect()
-  }, [])
 
   const readme = README_CONTENT[model.id]
   if (!readme) return null
 
-  const isEvenIndex = index % 2 === 0
+  useEffect(() => {
+    const section = sectionRef.current
+    const content = contentRef.current
+    if (!section || !content) return
+
+    let rafId: number
+
+    const updateProgress = () => {
+      rafId = requestAnimationFrame(() => {
+        const rect = section.getBoundingClientRect()
+        const viewportHeight = window.innerHeight
+        const contentRect = content.getBoundingClientRect()
+
+        const sectionTop = rect.top
+        const sectionHeight = rect.height
+        const viewportProgress = -sectionTop / (sectionHeight - viewportHeight)
+
+        const clampedProgress = Math.max(0, Math.min(1, viewportProgress))
+
+        const items = content.querySelectorAll('.readme-section')
+        const newProgress: ItemProgress[] = []
+
+        items.forEach((item, i) => {
+          const itemRect = item.getBoundingClientRect()
+          const itemTop = itemRect.top - viewportHeight * 0.3
+          const itemProgress = Math.max(0, Math.min(1, 1 - itemTop / (viewportHeight * 0.7)))
+
+          const easedProgress = easeOutExpo(itemProgress)
+
+          newProgress.push({
+            opacity: easedProgress,
+            translateY: (1 - easedProgress) * 40,
+            scale: 0.95 + easedProgress * 0.05
+          })
+        })
+
+        setItemProgress(newProgress)
+      })
+    }
+
+    const handleScroll = () => {
+      updateProgress()
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      if (rafId) cancelAnimationFrame(rafId)
+    }
+  }, [])
 
   return (
     <section
       ref={sectionRef}
       id={model.id}
-      className={`model-section ${isAltBg ? 'alt-bg' : ''} ${isEvenIndex ? 'layout-left' : 'layout-right'}`}
-      style={{ '--model-color': model.color, '--model-bg': model.bgColor } as React.CSSProperties}
+      className={`model-section ${isAltBg ? 'alt-bg' : ''}`}
     >
       <div className="model-layout">
         <div className="model-sidebar">
@@ -128,26 +166,38 @@ export function ModelSection({ model, index }: Props) {
           </div>
         </div>
 
-        <div className="model-content">
-          <div className="content-header reveal">
+        <div className="model-content" ref={contentRef}>
+          <div className="content-header">
             <h3 className="content-title">{readme.title}</h3>
           </div>
 
           <div className="readme-sections">
-            {readme.sections.map((sec, i) => (
-              <div key={i} className={`readme-section reveal ${sec.isQuote ? 'is-quote' : ''}`} style={{ transitionDelay: `${i * 80}ms` }}>
-                <h4 className="readme-section-title">
-                  {sec.isQuote && <span className="quote-mark" style={{ color: model.color }}>"</span>}
-                  {sec.title}
-                </h4>
-                <p className="readme-section-content">{sec.content}</p>
-              </div>
-            ))}
+            {readme.sections.map((sec, i) => {
+              const progress = itemProgress[i] || { opacity: 0, translateY: 40, scale: 0.95 }
+              return (
+                <div
+                  key={i}
+                  className={`readme-section ${sec.isQuote ? 'is-quote' : ''}`}
+                  style={{
+                    opacity: progress.opacity,
+                    transform: `translateY(${progress.translateY}px) scale(${progress.scale})`,
+                  }}
+                >
+                  <h4 className="readme-section-title">
+                    {sec.isQuote && <span className="quote-mark" style={{ color: model.color }}>"</span>}
+                    {sec.title}
+                  </h4>
+                  <p className="readme-section-content">{sec.content}</p>
+                </div>
+              )
+            })}
           </div>
-
-
         </div>
       </div>
     </section>
   )
+}
+
+function easeOutExpo(x: number): number {
+  return x === 1 ? 1 : 1 - Math.pow(2, -10 * x)
 }
