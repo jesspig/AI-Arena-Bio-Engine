@@ -1,94 +1,216 @@
 import { useEffect, useRef } from 'react';
 import p5 from 'p5';
-import { CreatureState, Vec2 } from '../engine/types';
+import { WorldState, CreatureState, InteractionMode, FoodType } from '../engine/types';
 import { createCreature, updateCreature } from '../engine/creature';
-import { drawCreature, drawTargetIndicator, drawBackground, drawBehaviorLabel } from '../render/creatureRender';
+import { createWorld, updateWorld, checkFoodConsumption, addFood, addObstacle, removeObstacles } from '../engine/world';
+import { drawCreature, drawTargetIndicator, drawBehaviorLabel } from '../render/creatureRender';
+import { drawEnvironment } from '../render/environmentRender';
+import { drawParticles } from '../render/particleRender';
+import { distance } from '../engine/math';
 
 interface BioCanvasProps {
-  creatureRef: React.MutableRefObject<CreatureState | null>;
-  segmentCount: number;
-  moveSpeed: number;
+  worldRef: React.MutableRefObject<WorldState | null>;
+  onCreatureInit: (creature: CreatureState) => void;
+  onInteractionChange: (mode: InteractionMode) => void;
 }
 
-export default function BioCanvas({ creatureRef, segmentCount, moveSpeed }: BioCanvasProps) {
+const SEGMENT_COUNT = 40;
+const MOVE_SPEED = 200;
+const DAY_SPEED = 1;
+
+export default function BioCanvas({
+  worldRef,
+  onCreatureInit,
+  onInteractionChange,
+}: BioCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mouseTargetRef = useRef<Vec2 | null>(null);
-  const timeRef = useRef(0);
-  const paramsRef = useRef({ segmentCount, moveSpeed });
-  paramsRef.current = { segmentCount, moveSpeed };
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    let creature: CreatureState | null = null;
+    let world: WorldState;
 
     const sketch = (p: p5) => {
       p.setup = () => {
         const w = container.clientWidth || 800;
         const h = container.clientHeight || 600;
-        p.createCanvas(w, h);
+        p.createCanvas(w, h).parent(container);
+        p.frameRate(60);
 
-        creature = createCreature(
+        world = createWorld(w, h);
+        const creature = createCreature(
           {
-            segmentCount: paramsRef.current.segmentCount,
-            moveSpeed: paramsRef.current.moveSpeed,
+            segmentCount: SEGMENT_COUNT,
+            moveSpeed: MOVE_SPEED,
           },
           { x: w / 2, y: h / 2 },
         );
-        creatureRef.current = creature;
-        timeRef.current = 0;
+        world.creature = creature;
+        worldRef.current = world;
+        onCreatureInit(creature);
       };
 
       p.draw = () => {
+        if (!world || !world.creature) return;
         const dt = Math.min(p.deltaTime / 1000, 0.05);
-        timeRef.current += dt;
+        world.width = p.width;
+        world.height = p.height;
+        world.dayLength = Math.floor(3600 / DAY_SPEED);
 
-        if (!creature) return;
+        world.creature.config.segmentCount = SEGMENT_COUNT;
+        world.creature.config.moveSpeed = MOVE_SPEED;
 
-        creature.config.segmentCount = paramsRef.current.segmentCount;
-        creature.config.moveSpeed = paramsRef.current.moveSpeed;
+        world.mousePos = { x: p.mouseX, y: p.mouseY };
+        world.mousePrevPos = { x: p.pmouseX, y: p.pmouseY };
 
-        drawBackground(p, timeRef.current);
+        const dtMouse = distance(world.mousePos, world.mousePrevPos);
+        if (p.mouseIsPressed && dtMouse > 2) {
+          world.mouseDragPos = { x: p.mouseX, y: p.mouseY };
+          world.mouseActive = true;
+          world.interactionMode = 'TOY';
+        } else if (!p.mouseIsPressed) {
+          world.mouseDragPos = null;
+          const head = world.creature.headPos;
+          const distToHead = distance(head, world.mousePos);
 
-        updateCreature(
-          creature,
-          mouseTargetRef.current,
-          dt,
-          { width: p.width, height: p.height },
-          timeRef.current,
-        );
+          if (distToHead < 40 && p.mouseX >= 0 && p.mouseX <= p.width && p.mouseY >= 0 && p.mouseY <= p.height) {
+            world.mouseActive = true;
+            world.interactionMode = 'PETTING';
+          } else if (
+            p.mouseX < 0 || p.mouseX > p.width || p.mouseY < 0 || p.mouseY > p.height
+          ) {
+            world.mouseActive = false;
+            world.interactionMode = 'NONE';
+          } else if (world.interactionMode === 'PETTING') {
+            world.mouseActive = true;
+            world.interactionMode = 'NONE';
+          }
+        }
 
-        drawCreature(p, creature, timeRef.current);
-        drawTargetIndicator(p, mouseTargetRef.current);
-        drawBehaviorLabel(p, creature);
+        onInteractionChange(world.interactionMode);
 
-        p.fill(100, 180, 140, 100);
+        updateWorld(world);
+        updateCreature(world, dt);
+        checkFoodConsumption(world);
+
+        drawEnvironment(p, world);
+        drawCreature(p, world.creature, world);
+        drawParticles(p, world);
+
+        const timeSec = world.time * 0.016;
+        drawTargetIndicator(p, world.creature.target, timeSec);
+        drawBehaviorLabel(p, world.creature, timeSec);
+
+        p.push();
+        p.fill(120, 220, 160, 140);
         p.noStroke();
         p.textSize(10);
         p.textAlign(p.LEFT, p.TOP);
+        const moodEmoji = getMoodEmoji(world.creature.needs.mood);
+        const foodCount = world.foodItems.filter((f) => !f.eaten).length;
         p.text(
-          `节段: ${creature.config.segmentCount} | 速度: ${Math.round(creature.config.moveSpeed)} | 状态: ${creature.behavior}`,
+          `${moodEmoji} 食物:${foodCount} 饥饿:${Math.round(world.creature.needs.hunger)} 精力:${Math.round(world.creature.needs.energy)}`,
           12,
           12,
         );
+        p.pop();
 
-        creatureRef.current = creature;
+        worldRef.current = world;
       };
 
-      p.mousePressed = () => {
-        if (p.mouseX >= 0 && p.mouseX <= p.width && p.mouseY >= 0 && p.mouseY <= p.height) {
-          mouseTargetRef.current = { x: p.mouseX, y: p.mouseY };
+      p.mousePressed = (e?: MouseEvent) => {
+        if (!world || !world.creature) return;
+        world.mousePressed = true;
+
+        if (e && e.button === 2) {
+          const head = world.creature.headPos;
+          const d = distance(head, world.mousePos);
+          if (d < 80) {
+            world.creature.needs.fear = Math.min(100, world.creature.needs.fear + 40);
+            world.creature.fleeingFrom = { x: world.mousePos.x, y: world.mousePos.y };
+            world.creature.needs.comfort = Math.max(0, world.creature.needs.comfort - 20);
+            world.interactionMode = 'POKING';
+          }
+          return;
+        }
+
+        if (p.mouseX < world.width - 260) {
+          const shiftKey = e?.shiftKey || false;
+          const ctrlKey = e?.ctrlKey || false;
+
+          let foodType: FoodType = 'NEUTRAL';
+          if (shiftKey) foodType = 'FAVORITE';
+          if (ctrlKey) foodType = 'AVOID';
+
+          addFood(world, p.mouseX, p.mouseY, foodType);
         }
       };
 
       p.mouseReleased = () => {
-        mouseTargetRef.current = null;
+        if (!world) return;
+        world.mousePressed = false;
+        world.mouseDragPos = null;
+        world.interactionMode = 'NONE';
+        onInteractionChange('NONE');
+      };
+
+      p.doubleClicked = () => {
+        if (!world) return true;
+        if (p.mouseX < world.width - 260) {
+          addObstacle(world, p.mouseX, p.mouseY);
+        }
+        return false;
+      };
+
+      p.keyPressed = () => {
+        if (!world) return;
+        switch (p.key.toLowerCase()) {
+          case 'd':
+            world.timeOfDay = (world.timeOfDay + 0.3) % 1;
+            world.isNight = world.timeOfDay > 0.6 || world.timeOfDay < 0.2;
+            break;
+          case 'f':
+            for (let i = 0; i < 5; i++) {
+              const types: FoodType[] = ['FAVORITE', 'NEUTRAL', 'AVOID'];
+              addFood(world, p.mouseX + (Math.random() - 0.5) * 100, p.mouseY + (Math.random() - 0.5) * 100, types[Math.floor(Math.random() * 3)]);
+            }
+            break;
+          case 'r':
+            removeObstacles(world);
+            world.positiveMemories = [];
+            break;
+          case 'h':
+            world.showHUD = !world.showHUD;
+            break;
+          case 'c':
+            world.showControls = !world.showControls;
+            break;
+          case 'b':
+            if (world.creature && world.creature.subState !== 'BURROWING') {
+              world.creature.subState = 'RESTING';
+              world.creature.mainState = 'AWAKE';
+              world.creature.stateTimer = 0;
+              world.creature.needs.comfort = Math.min(100, world.creature.needs.comfort + 5);
+            }
+            break;
+          case 'p':
+            world.toyPos = { x: p.mouseX, y: p.mouseY };
+            world.interactionMode = 'TOY';
+            break;
+          case 'l':
+            world.showScent = !world.showScent;
+            break;
+        }
       };
 
       p.windowResized = () => {
         if (container) {
           p.resizeCanvas(container.clientWidth, container.clientHeight);
+          if (world) {
+            world.width = container.clientWidth;
+            world.height = container.clientHeight;
+          }
         }
       };
     };
@@ -108,6 +230,24 @@ export default function BioCanvas({ creatureRef, segmentCount, moveSpeed }: BioC
         position: 'relative',
         overflow: 'hidden',
       }}
+      onContextMenu={(e) => e.preventDefault()}
     />
   );
+}
+
+function getMoodEmoji(mood: string): string {
+  switch (mood) {
+    case 'EXCITED':
+      return '✨';
+    case 'CURIOUS':
+      return '🔍';
+    case 'NERVOUS':
+      return '😰';
+    case 'SCARED':
+      return '💨';
+    case 'CONTENT':
+      return '😊';
+    default:
+      return '';
+  }
 }

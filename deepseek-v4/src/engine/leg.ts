@@ -1,5 +1,5 @@
 import { BodySegment, LegState, Vec2, CreatureConfig } from './types';
-import { sub, add, scale, normalize, length } from './math';
+import { sub, add, scale, normalize, length, clamp } from './math';
 
 function solve2JointIK(
   shoulder: Vec2,
@@ -29,7 +29,8 @@ function solve2JointIK(
   }
 
   const cosAngle = (d * d + len1 * len1 - len2 * len2) / (2 * d * len1);
-  const angle = Math.acos(Math.max(-1, Math.min(1, cosAngle)));
+  const safeCos = clamp(cosAngle, -1, 1);
+  const angle = Math.acos(safeCos);
   const targetAngle = Math.atan2(toTarget.y, toTarget.x);
   const kneeAngle = targetAngle + angle * sideSign;
   const knee: Vec2 = {
@@ -43,16 +44,20 @@ function solve2JointIK(
   return { knee, foot };
 }
 
+const MAX_DT = 0.033;
+
 export function updateLegs(
   segments: BodySegment[],
   dt: number,
   config: CreatureConfig,
   time: number,
+  headVelocity: Vec2,
+  curlAmount: number = 0,
 ): void {
   if (segments.length === 0) return;
 
   for (let i = 0; i < segments.length; i++) {
-    updateLeg(segments[i], segments, i, dt, config, time);
+    updateLeg(segments[i], segments, i, dt, config, time, headVelocity, curlAmount);
   }
 }
 
@@ -63,9 +68,11 @@ function updateLeg(
   dt: number,
   config: CreatureConfig,
   time: number,
+  headVelocity: Vec2,
+  curlAmount: number = 0,
 ): void {
-  updateSingleLeg(segment, segment.legLeft, allSegments, index, dt, config, time, 'left');
-  updateSingleLeg(segment, segment.legRight, allSegments, index, dt, config, time, 'right');
+  updateSingleLeg(segment, segment.legLeft, allSegments, index, dt, config, time, headVelocity, 'left', curlAmount);
+  updateSingleLeg(segment, segment.legRight, allSegments, index, dt, config, time, headVelocity, 'right', curlAmount);
 }
 
 function updateSingleLeg(
@@ -76,18 +83,39 @@ function updateSingleLeg(
   dt: number,
   config: CreatureConfig,
   time: number,
+  headVelocity: Vec2,
   side: 'left' | 'right',
+  curlAmount: number = 0,
 ): void {
+  const safeDt = Math.min(dt, MAX_DT);
   const sideSign = side === 'left' ? -1 : 1;
-  const shoulderOffset: Vec2 = { x: sideSign * (segment.width * 0.6), y: 0 };
+  const shoulderOffset: Vec2 = { x: sideSign * (segment.width * 0.6 * (1 - curlAmount * 0.4)), y: 0 };
   leg.joints.shoulder = add(segment.position, shoulderOffset);
 
-  const moveSpeed = length(sub(segment.position, segment.prevPosition)) / Math.max(dt, 0.016);
-  const liftThreshold = 30;
+  const headSpeed = length(headVelocity);
+  const totalLegLen = config.legSegment1 + config.legSegment2;
 
-  if (moveSpeed > liftThreshold && leg.planted) {
+  if (curlAmount > 0.3) {
+    const tuckShoulder: Vec2 = {
+      x: leg.joints.shoulder.x + sideSign * 3 * curlAmount,
+      y: leg.joints.shoulder.y + 5 * curlAmount,
+    };
+    const tuckTarget: Vec2 = {
+      x: tuckShoulder.x + sideSign * 5,
+      y: tuckShoulder.y + 9,
+    };
+    const ik = solve2JointIK(
+      tuckShoulder,
+      tuckTarget,
+      config.legSegment1,
+      config.legSegment2,
+      side,
+    );
+    leg.joints.knee = ik.knee;
+    leg.joints.foot = ik.foot;
     leg.planted = false;
-    leg.swingPhase = 0;
+    leg.swingPhase = Math.min(leg.swingPhase + safeDt, Math.PI * 0.8);
+    return;
   }
 
   if (leg.planted) {
@@ -100,13 +128,36 @@ function updateSingleLeg(
     );
     leg.joints.knee = ik.knee;
     leg.joints.foot = ik.foot;
-  } else {
-    leg.swingPhase += dt * (1.5 + moveSpeed * 0.02);
 
-    const gaitOffset = getGaitOffset(allSegments, segment, index, side);
+    const shoulderToPlant = sub(leg.plantPos, leg.joints.shoulder);
+    const distToPlant = length(shoulderToPlant);
+    const maxStretch = totalLegLen * 0.88;
+
+    if (distToPlant > maxStretch && canLegLift(index, side, time, allSegments.length, headSpeed)) {
+      leg.planted = false;
+      leg.swingStartPos = { x: leg.plantPos.x, y: leg.plantPos.y };
+      leg.swingPhase = 0;
+    }
+  } else {
+    const swingSpeed = 3.0 + headSpeed * 0.03;
+    leg.swingPhase += safeDt * swingSpeed;
+
+    const moveDir = headSpeed > 8 ? normalize(headVelocity) : { x: 1, y: 0 };
+    const perpDir = { x: -moveDir.y, y: moveDir.x };
+    const stepDistance = totalLegLen * 0.72;
+    const lateralReach = totalLegLen * 0.45;
+
+    const swingTarget: Vec2 = {
+      x: leg.joints.shoulder.x + moveDir.x * stepDistance + perpDir.x * sideSign * lateralReach,
+      y: leg.joints.shoulder.y + moveDir.y * stepDistance + perpDir.y * sideSign * lateralReach,
+    };
+
+    const t = clamp(leg.swingPhase / Math.PI, 0, 1);
+    const easeT = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
     const targetPos: Vec2 = {
-      x: segment.position.x + sideSign * (config.legSegment1 + config.legSegment2) * 0.6 + Math.sin(time * 2 + gaitOffset) * 10,
-      y: segment.position.y + (config.legSegment1 + config.legSegment2) * 0.7 + Math.abs(Math.sin(leg.swingPhase)) * 15 - 5,
+      x: leg.swingStartPos.x + (swingTarget.x - leg.swingStartPos.x) * easeT,
+      y: leg.swingStartPos.y + (swingTarget.y - leg.swingStartPos.y) * easeT,
     };
 
     const ik = solve2JointIK(
@@ -121,19 +172,19 @@ function updateSingleLeg(
 
     if (leg.swingPhase > Math.PI) {
       leg.planted = true;
-      leg.plantPos = { ...leg.joints.foot };
+      leg.plantPos = { x: ik.foot.x, y: ik.foot.y };
       leg.swingPhase = 0;
     }
   }
 }
 
-function getGaitOffset(
-  allSegments: BodySegment[],
-  _segment: BodySegment,
-  index: number,
-  side: 'left' | 'right',
-): number {
-  const sidePhase = side === 'left' ? 0 : Math.PI;
-  const segmentPhase = (index / allSegments.length) * Math.PI * 2;
-  return sidePhase + segmentPhase;
+function canLegLift(index: number, side: 'left' | 'right', time: number, totalSegments: number, speed: number): boolean {
+  if (speed < 10) return index === 0 || index === totalSegments - 1;
+
+  const gaitClock = time * 0.06;
+  const phaseOffset = (index / Math.max(totalSegments, 1)) * Math.PI * 2;
+  const sideOffset = side === 'left' ? 0 : Math.PI * 0.6;
+  const legPhase = (gaitClock + phaseOffset + sideOffset) % (Math.PI * 2);
+
+  return Math.sin(legPhase) > 0;
 }
