@@ -16,6 +16,7 @@ export function createLimbState(): LimbState {
     footTarget: { x: 0, y: 0 },
     isPlanted: true,
     plantTimer: 0,
+    stepPhase: 0,
   }
 }
 
@@ -57,17 +58,21 @@ export function updateLimb(
   spine: SpineState,
   headVelocity: Vec2,
   time: number,
+  globalStepPhase: number,
 ): void {
   const hip = computeHipPosition(spine, config)
   limb.hip = hip
 
   const hipToFootDist = dist(hip, limb.foot)
+  const speed = length(headVelocity)
 
-  if (limb.isPlanted && hipToFootDist > LIFT_DISTANCE) {
+  const gaitPhase = (globalStepPhase + config.phaseOffset) % (Math.PI * 2)
+  const shouldLift = Math.sin(gaitPhase) > 0.3
+
+  if (limb.isPlanted && (hipToFootDist > LIFT_DISTANCE || shouldLift) && speed > 0.3) {
     limb.isPlanted = false
     limb.plantTimer = 0
     const velDir = normalize(headVelocity)
-    const speed = length(headVelocity)
     const stepReach = Math.min(speed * 8, 40)
     const baseTarget = add(hip, scale(velDir, stepReach))
     limb.footTarget = {

@@ -29,8 +29,6 @@ body,
   color-scheme: dark;
 }
 
-/* ---- Glass morphism base ---- */
-
 .glass {
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
@@ -38,8 +36,6 @@ body,
   border: 1px solid var(--glass-border);
   border-radius: 10px;
 }
-
-/* ---- Header HUD ---- */
 
 .hud-header {
   position: fixed;
@@ -65,7 +61,11 @@ body,
   gap: 12px;
 }
 
-/* ---- Back button ---- */
+.hud-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
 .back-btn {
   display: inline-flex;
@@ -109,8 +109,6 @@ body,
   transform: translateX(-1px);
 }
 
-/* ---- Creature title ---- */
-
 .creature-title {
   font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei",
     sans-serif;
@@ -120,7 +118,55 @@ body,
   letter-spacing: 0.8px;
 }
 
-/* ---- State badge ---- */
+.emotion-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 10px;
+}
+
+.emotion-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.emotion-label {
+  font-size: 9px;
+  color: var(--text-secondary);
+  font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  min-width: 20px;
+}
+
+.bar-track {
+  width: 50px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease-out;
+}
+
+.bar-fill--energy {
+  background: linear-gradient(90deg, #00c8b4, #00e5a0);
+}
+
+.bar-fill--hunger {
+  background: linear-gradient(90deg, #ff8844, #ffaa22);
+}
+
+.bar-fill--satisfaction {
+  background: linear-gradient(90deg, #ffb020, #ffdd44);
+}
+
+.bar-fill--happiness {
+  background: linear-gradient(90deg, #ff66aa, #ff99cc);
+}
 
 .state-badge {
   display: inline-flex;
@@ -157,6 +203,41 @@ body,
   background: #4488ff;
   box-shadow: 0 0 8px rgba(68, 136, 255, 0.5);
 }
+.state-dot--curious {
+  background: #ffcc00;
+  box-shadow: 0 0 8px rgba(255, 204, 0, 0.5);
+}
+.state-dot--play {
+  background: #cc66ff;
+  box-shadow: 0 0 8px rgba(204, 102, 255, 0.5);
+}
+.state-dot--sleep {
+  background: #6688cc;
+  box-shadow: 0 0 8px rgba(102, 136, 204, 0.5);
+}
+.state-dot--eat {
+  background: #ff9944;
+  box-shadow: 0 0 8px rgba(255, 153, 68, 0.5);
+}
+
+.intent-bar {
+  position: fixed;
+  bottom: calc(48px + var(--safe-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 5px 14px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.intent-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei",
+    sans-serif;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
 
 @keyframes pulse {
   0%,
@@ -169,8 +250,6 @@ body,
     transform: scale(1.3);
   }
 }
-
-/* ---- Help text ---- */
 
 .help-footer {
   position: fixed;
@@ -196,8 +275,6 @@ body,
   letter-spacing: 0.3px;
 }
 
-/* ---- Reduced motion ---- */
-
 @media (prefers-reduced-motion: reduce) {
   .state-dot {
     animation: none;
@@ -208,12 +285,11 @@ body,
   .back-btn-icon,
   .state-badge,
   .state-dot,
-  .help-footer {
+  .help-footer,
+  .bar-fill {
     transition: none;
   }
 }
-
-/* ---- Mobile ---- */
 
 @media (max-width: 480px) {
   .creature-title {
@@ -222,5 +298,13 @@ body,
 
   .hud-header {
     padding-top: calc(8px + var(--safe-top));
+  }
+
+  .emotion-bars {
+    display: none;
+  }
+
+  .bar-track {
+    width: 40px;
   }
 }

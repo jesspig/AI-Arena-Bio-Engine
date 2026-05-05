@@ -5,13 +5,19 @@ import './styles.css'
 
 const STATE_LABELS: Record<string, string> = {
   wander: '漫游',
-  hunt: '追踪',
+  hunt: '觅食',
   startle: '惊吓',
   rest: '休息',
+  curious: '好奇',
+  play: '玩耍',
+  sleep: '睡眠',
+  eat: '进食',
 }
 
 export default function App() {
   const [behaviorState, setBehaviorState] = useState(sketchState.behaviorState)
+  const [emotion, setEmotion] = useState(sketchState.emotion)
+  const [intent, setIntent] = useState(sketchState.intent)
   const [helpVisible, setHelpVisible] = useState(true)
 
   useEffect(() => {
@@ -19,14 +25,21 @@ export default function App() {
       if (sketchState.behaviorState !== behaviorState) {
         setBehaviorState(sketchState.behaviorState)
       }
+      setEmotion({ ...sketchState.emotion })
+      setIntent(sketchState.intent)
     }, 150)
     return () => clearInterval(interval)
   }, [behaviorState])
 
   useEffect(() => {
-    const timer = setTimeout(() => setHelpVisible(false), 6000)
+    const timer = setTimeout(() => setHelpVisible(false), 10000)
     return () => clearTimeout(timer)
   }, [])
+
+  const energyPercent = Math.round(emotion.energy * 100)
+  const satisfactionPercent = Math.round(emotion.satisfaction * 100)
+  const hungerPercent = Math.round(emotion.hunger * 100)
+  const happinessPercent = Math.round(emotion.happiness * 100)
 
   return (
     <>
@@ -50,13 +63,46 @@ export default function App() {
           </a>
           <span className="creature-title">深渊螈</span>
         </div>
-        <div className="state-badge glass" role="status" aria-live="polite">
-          <span className={`state-dot state-dot--${behaviorState}`} />
-          <span>{STATE_LABELS[behaviorState] ?? behaviorState}</span>
+        <div className="hud-right">
+          <div className="emotion-bars glass">
+            <div className="emotion-bar">
+              <span className="emotion-label">精力</span>
+              <div className="bar-track">
+                <div className="bar-fill bar-fill--energy" style={{ width: `${energyPercent}%` }} />
+              </div>
+            </div>
+            <div className="emotion-bar">
+              <span className="emotion-label">饱腹</span>
+              <div className="bar-track">
+                <div className="bar-fill bar-fill--hunger" style={{ width: `${100 - hungerPercent}%` }} />
+              </div>
+            </div>
+            <div className="emotion-bar">
+              <span className="emotion-label">满足</span>
+              <div className="bar-track">
+                <div className="bar-fill bar-fill--satisfaction" style={{ width: `${satisfactionPercent}%` }} />
+              </div>
+            </div>
+            <div className="emotion-bar">
+              <span className="emotion-label">快乐</span>
+              <div className="bar-track">
+                <div className="bar-fill bar-fill--happiness" style={{ width: `${happinessPercent}%` }} />
+              </div>
+            </div>
+          </div>
+          <div className="state-badge glass" role="status" aria-live="polite">
+            <span className={`state-dot state-dot--${behaviorState}`} />
+            <span>{STATE_LABELS[behaviorState] ?? behaviorState}</span>
+          </div>
         </div>
       </header>
+      <div className="intent-bar glass">
+        <span className="intent-text">{intent}</span>
+      </div>
       <footer className={`help-footer${helpVisible ? '' : ' hidden'}`}>
-        <p className="help-text glass">点击画布吸引生物 · 靠近触发惊吓</p>
+        <p className="help-text glass">
+          点击投食 · 双击惊吓 · 长按吸引 · 食物有偏好之分
+        </p>
       </footer>
     </>
   )
