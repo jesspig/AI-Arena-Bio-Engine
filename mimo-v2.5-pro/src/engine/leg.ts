@@ -1,4 +1,5 @@
-import type { LegConfig, LegState, SpineSegment, Vec2 } from './types'
+import type { LegConfig, LegState, SpineSegment, Vec2, GaitMode } from './types'
+import { GaitMode as GM } from './types'
 import { vec2, add, sub, scale, length, normalize, distance, fromAngle, angleOf, lerp, clamp } from './math'
 import { getSpineNormal } from './spine'
 
@@ -31,7 +32,6 @@ export function solveIK2Joint(
   const dist = length(diff)
   const totalLen = upperLen + lowerLen
 
-  // Target unreachable - stretch toward it
   if (dist >= totalLen) {
     const dir = normalize(diff)
     return {
@@ -41,7 +41,6 @@ export function solveIK2Joint(
     }
   }
 
-  // Target too close
   if (dist < Math.abs(upperLen - lowerLen) + 0.01) {
     const dir = normalize(diff)
     return {
@@ -51,7 +50,6 @@ export function solveIK2Joint(
     }
   }
 
-  // Law of cosines for the knee angle
   const a = upperLen
   const b = lowerLen
   const c = dist
@@ -71,28 +69,68 @@ export function solveIK2Joint(
   }
 }
 
+interface GaitParams {
+  liftThreshold: number
+  liftSpeed: number
+  liftHeight: number
+  stagger: number
+}
+
+function getGaitParams(mode: GaitMode, speedMultiplier: number): GaitParams {
+  switch (mode) {
+    case GM.RUN:
+      return {
+        liftThreshold: 0.5,
+        liftSpeed: speedMultiplier * 4.5,
+        liftHeight: 28,
+        stagger: 0,
+      }
+    case GM.STALK:
+      return {
+        liftThreshold: 0.8,
+        liftSpeed: speedMultiplier * 1.5,
+        liftHeight: 10,
+        stagger: 0.3,
+      }
+    case GM.WALK:
+    default:
+      return {
+        liftThreshold: 0.7,
+        liftSpeed: speedMultiplier * 3,
+        liftHeight: 20,
+        stagger: 0,
+      }
+  }
+}
+
 export function updateLeg(
   leg: LegState,
   config: LegConfig,
   spine: SpineSegment[],
-  speed: number,
-  dt: number
+  speedMultiplier: number,
+  gaitMode: GaitMode,
+  legIndex: number,
+  dt: number,
+  _accumulatedTime: number = 0
 ): void {
   const attachPt = spine[config.attachIndex]
   const normal = getSpineNormal(spine, config.attachIndex)
   const sideOffset = scale(normal, config.side * 15)
 
-  // The natural foot position moves with the body
   const restOffset = fromAngle(attachPt.angle + config.restAngle, config.upperLength + config.lowerLength)
   const naturalFootPos = add(add(attachPt.pos, sideOffset), restOffset)
 
-  if (leg.isPlanted) {
-    // Check if foot is too far from natural position
-    const dist = distance(leg.footPos, naturalFootPos)
-    const maxReach = (config.upperLength + config.lowerLength) * 0.7
+  const gait = getGaitParams(gaitMode, speedMultiplier)
 
-    if (dist > maxReach) {
-      // Start lifting foot
+  const pairPhase = (legIndex % 2 === 0) ? 0 : Math.PI
+  const groupPhase = Math.floor(legIndex / 2) * (Math.PI / 3)
+  const phaseOffset = pairPhase + groupPhase + gait.stagger * legIndex
+
+  if (leg.isPlanted) {
+    const dist = distance(leg.footPos, naturalFootPos)
+    const dynamicThreshold = (config.upperLength + config.lowerLength) * gait.liftThreshold
+
+    if (dist > dynamicThreshold) {
       leg.isPlanted = false
       leg.liftPhase = 0
       leg.targetPos = naturalFootPos
@@ -100,22 +138,19 @@ export function updateLeg(
   }
 
   if (!leg.isPlanted) {
-    // Animate foot lift and move to new position
-    leg.liftPhase += speed * dt * 3
+    leg.liftPhase += gait.liftSpeed * dt
 
     if (leg.liftPhase >= 1) {
-      // Plant foot
       leg.footPos = { ...naturalFootPos }
       leg.isPlanted = true
       leg.liftPhase = 0
     } else {
-      // Arc movement
       const t = leg.liftPhase
       const easedT = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
 
       const midPoint = {
         x: lerp(leg.footPos.x, naturalFootPos.x, easedT),
-        y: lerp(leg.footPos.y, naturalFootPos.y, easedT) - 20 * Math.sin(t * Math.PI),
+        y: lerp(leg.footPos.y, naturalFootPos.y, easedT) - gait.liftHeight * Math.sin(t * Math.PI),
       }
 
       leg.targetPos = midPoint

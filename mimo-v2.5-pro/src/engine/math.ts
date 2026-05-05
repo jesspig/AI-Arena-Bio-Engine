@@ -129,3 +129,43 @@ export function smoothstep(edge0: number, edge1: number, x: number): number {
   const t = clamp((x - edge0) / (edge1 - edge0), 0, 1)
   return t * t * (3 - 2 * t)
 }
+
+export function remap(value: number, inMin: number, inMax: number, outMin: number, outMax: number): number {
+  return outMin + (value - inMin) * (outMax - outMin) / (inMax - inMin)
+}
+
+export function clampVec2(v: Vec2, maxLen: number): Vec2 {
+  const len = length(v)
+  if (len <= maxLen) return { ...v }
+  return scale(normalize(v), maxLen)
+}
+
+export function randomPointInSector(
+  center: Vec2,
+  radius: number,
+  startAngle: number,
+  sweepAngle: number
+): Vec2 {
+  const angle = startAngle + Math.random() * sweepAngle
+  const r = Math.sqrt(Math.random()) * radius
+  return { x: center.x + Math.cos(angle) * r, y: center.y + Math.sin(angle) * r }
+}
+
+export function inverseLerp(a: number, b: number, value: number): number {
+  if (Math.abs(b - a) < 0.0001) return 0
+  return clamp((value - a) / (b - a), 0, 1)
+}
+
+export function exponentialDecay(current: number, target: number, decay: number, dt: number): number {
+  return target + (current - target) * Math.exp(-decay * dt)
+}
+
+export function wrapAngle(angle: number): number {
+  while (angle > Math.PI) angle -= Math.PI * 2
+  while (angle < -Math.PI) angle += Math.PI * 2
+  return angle
+}
+
+export function angleDifference(a: number, b: number): number {
+  return wrapAngle(b - a)
+}

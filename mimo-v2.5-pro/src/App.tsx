@@ -1,23 +1,45 @@
-import { useState } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import BioCanvas from './components/BioCanvas'
 import ControlPanel from './components/ControlPanel'
 import { BehaviorState } from './engine/types'
 
+interface NeedsState {
+  hunger: number
+  energy: number
+  curiosity: number
+  social: number
+  mood: number
+}
+
 export default function App() {
   const [showDebug, setShowDebug] = useState(false)
   const [creatureState, setCreatureState] = useState<string>(BehaviorState.WANDERING)
+  const [needs, setNeeds] = useState<NeedsState | undefined>()
+  const [resetKey, setResetKey] = useState(0)
+
+  const handleStateChange = useCallback((state: string) => {
+    setCreatureState(state)
+  }, [])
+
+  const handleNeedsChange = useCallback((n: NeedsState) => {
+    setNeeds(n)
+  }, [])
+
+  const handleReset = useCallback(() => {
+    setResetKey(k => k + 1)
+  }, [])
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-gray-950">
       <BioCanvas
+        key={resetKey}
         showDebug={showDebug}
-        onStateChange={setCreatureState}
+        onStateChange={handleStateChange}
+        onNeedsChange={handleNeedsChange}
       />
 
-      {/* Top bar */}
       <header className="fixed top-0 left-0 right-0 z-40 pointer-events-none">
         <div className="flex items-center justify-between px-5 py-4">
-          {/* Back button */}
           <a
             href="/"
             className="pointer-events-auto group flex items-center gap-2.5 px-3.5 py-2 rounded-xl
@@ -37,13 +59,12 @@ export default function App() {
             <span className="text-sm font-medium">Portal</span>
           </a>
 
-          {/* Title */}
           <div className="text-right">
             <h1 className="text-sm font-semibold text-white/70 tracking-wide">
               MiMo V2.5 Pro
             </h1>
             <p className="text-[11px] text-gray-500 mt-0.5">
-              程序化脊椎爬行动物
+              程序化脊椎爬行动物 · AI 驱动行为
             </p>
           </div>
         </div>
@@ -53,6 +74,8 @@ export default function App() {
         showDebug={showDebug}
         onToggleDebug={() => setShowDebug(!showDebug)}
         creatureState={creatureState}
+        needs={needs}
+        onReset={handleReset}
       />
     </div>
   )
